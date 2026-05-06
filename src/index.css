@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,700;1,6..72,400&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-background: #faf9f7;
+  --color-secondary: #5e5e5d;
+  --color-tertiary: #000000;
+  --color-on-surface: #1b1c1b;
+  --color-outline-variant: #c4c7c7;
+  --color-surface-container: #efeeec;
+  --color-surface-container-low: #f5f3f1;
+
+  --font-serif: "Newsreader", serif;
+  --font-sans: "Manrope", sans-serif;
+
+  --spacing-margin-page: 64px;
+  --spacing-container-max: 1120px;
+  --spacing-section-gap: 128px;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-sans antialiased;
+  }
+}
+
+.text-display {
+  @apply font-serif text-[72px] leading-[1.1] tracking-[-0.02em] font-normal;
+}
+
+.text-headline-lg {
+  @apply font-serif text-[48px] leading-[1.2] font-normal;
+}
+
+.text-headline-md {
+  @apply font-serif text-[32px] leading-[1.3] font-normal;
+}
+
+.text-headline-sm {
+  @apply font-serif text-[24px] leading-[1.4] font-medium;
+}
+
+.text-label-caps {
+  @apply font-sans text-[12px] leading-none tracking-[0.15em] font-semibold uppercase;
+}
+
+.text-body-lg {
+  @apply font-sans text-[18px] leading-[1.7] font-normal;
+}
+
+.text-body-md {
+  @apply font-sans text-[16px] leading-[1.6] font-normal;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-margin-page: 24px;
+    --spacing-section-gap: 64px;
+  }
+  .text-display {
+    @apply text-[48px];
+  }
+}
