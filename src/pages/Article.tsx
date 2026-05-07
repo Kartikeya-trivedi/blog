@@ -1,26 +1,68 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, useScroll, useSpring } from 'motion/react';
+import { ChevronRight, ArrowLeft, Share2, Twitter, Linkedin, Link as LinkIcon, ExternalLink, Bookmark, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
-import Markdown from 'react-markdown';
+import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
+import { cn } from '@/src/lib/utils';
 
 export default function ArticlePage() {
   const { id } = useParams();
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   useEffect(() => {
     if (id) {
       const data = blogService.getPostById(id);
       if (data) {
         setPost(data);
+        const all = blogService.getPosts().filter(p => p.id !== id && p.status === 'PUBLISHED');
+        const sameCategory = all.filter(p => p.category === data.category);
+        setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
       }
     }
     setLoading(false);
+    window.scrollTo(0, 0);
   }, [id]);
 
-  if (loading) return <div className="py-24 text-center">Loading entry...</div>;
+  const toc = useMemo(() => {
+    if (!post?.content) return [];
+    const headings = post.content.match(/^#+\s+.+$/gm) || [];
+    return headings.map(h => {
+      const level = (h.match(/#/g) || []).length;
+      const text = h.replace(/^#+\s+/, '');
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      return { level, text, id };
+    });
+  }, [post?.content]);
+
+  const calculateReadTime = (content: string) => {
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    return Math.max(1, Math.ceil(words / 200));
+  };
+
+  const handleShare = (platform: 'twitter' | 'linkedin' | 'copy') => {
+    const url = window.location.href;
+    const title = post?.title || 'The Editorial Post';
+    
+    if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(url);
+      // Optional: show toast
+    }
+  };
+
+  if (loading) return <div className="py-24 text-center text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
 
   if (!post) {
     return (
@@ -35,46 +77,69 @@ export default function ArticlePage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="w-full"
+      className="w-full relative"
     >
+      {/* Reading Progress Bar */}
+      <motion.div className="fixed top-0 left-0 right-0 h-1 bg-tertiary z-[100] origin-left" style={{ scaleX }} />
+
       <section className="max-w-container-max mx-auto px-margin-page pt-16">
-        <nav className="flex items-center gap-2 mb-8 text-label-caps text-secondary">
+        <nav className="flex items-center gap-2 mb-8 text-[10px] text-secondary font-mono tracking-widest uppercase">
           <Link to="/" className="hover:text-tertiary transition-colors">Journal</Link>
-          <ChevronRight size={14} />
-          <span className="text-tertiary opacity-60 font-medium">{post.category}</span>
-          <ChevronRight size={14} />
+          <ChevronRight size={10} />
+          <span className="text-tertiary opacity-60">{post.category}</span>
+          <ChevronRight size={10} />
           <span className="text-tertiary opacity-40 truncate max-w-[200px]">{post.title}</span>
         </nav>
 
+        {post.series && (
+          <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded-full text-[10px] font-mono text-tertiary">
+            <Bookmark size={12} className="text-tertiary" />
+            <span className="uppercase tracking-widest opacity-60">Series:</span>
+            <span className="font-bold">{post.series}</span>
+            <span className="px-1.5 py-0.5 bg-tertiary text-white rounded-full">PART {post.seriesOrder || 1}</span>
+          </div>
+        )}
+
         <motion.h1 
-          className="text-display max-w-[800px] mb-12"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          className="text-display max-w-[900px] mb-12 sm:text-7xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
           {post.title}
         </motion.h1>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-12 border-b border-outline-variant pb-8">
-          <div className="flex flex-col gap-2">
-            <span className="text-label-caps text-secondary">AUTHOR</span>
-            <span className="text-body-lg text-tertiary">{post.author}</span>
+        <div className="flex flex-wrap justify-between items-start md:items-end gap-8 mb-12 border-b border-outline-variant pb-8">
+          <div className="flex gap-12">
+            <div className="flex flex-col gap-2">
+              <span className="text-label-caps text-secondary text-[10px]">AUTHOR</span>
+              <span className="text-body-md text-tertiary font-medium">{post.author}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-label-caps text-secondary text-[10px]">DATE</span>
+              <span className="text-body-md text-tertiary font-medium">{post.date}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-label-caps text-secondary text-[10px]">READ TIME</span>
+              <span className="text-body-md text-tertiary font-medium flex items-center gap-1.5">
+                <Clock size={16} /> {calculateReadTime(post.content)} MIN
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-label-caps text-secondary">DATE</span>
-            <span className="text-body-lg text-tertiary">{post.date}</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-label-caps text-secondary">CATEGORY</span>
-            <span className="text-body-lg text-tertiary">{post.category}</span>
+          
+          <div className="flex items-center gap-4">
+            <span className="text-label-caps text-secondary text-[10px] mr-2">SHARE</span>
+            <button onClick={() => handleShare('twitter')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Twitter size={18} /></button>
+            <button onClick={() => handleShare('linkedin')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={18} /></button>
+            <button onClick={() => handleShare('copy')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={18} /></button>
           </div>
         </div>
 
         {post.image && (
-          <div className="w-full aspect-[21/9] bg-surface-container overflow-hidden mb-section-gap">
+          <div className="w-full aspect-[21/9] bg-surface-container overflow-hidden mb-16 grayscale">
             <img 
               alt={post.title} 
               loading="lazy"
@@ -86,27 +151,83 @@ export default function ArticlePage() {
         )}
       </section>
 
-      <article className="max-w-[800px] mx-auto px-margin-page mb-section-gap">
-        <div className="prose prose-neutral prose-lg max-w-none">
-          {post.excerpt && (
-            <p className="text-headline-md italic font-serif text-secondary mb-12 border-l-4 border-outline-variant pl-8 py-2">
-              {post.excerpt}
-            </p>
-          )}
-          <div className="markdown-body">
-            <Markdown>{post.content}</Markdown>
+      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-12 relative">
+        {/* TOC Sidebar */}
+        <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
+          <div className="border-l border-outline-variant pl-8 py-2">
+             <h4 className="text-label-caps text-tertiary mb-6 flex items-center gap-2">
+               <span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span>
+               DOCUMENT INDEX
+             </h4>
+             <ul className="space-y-4">
+               {toc.map(({ id, text, level }, i) => (
+                 <li key={i} className={cn(
+                   "text-[11px] font-mono leading-tight transition-colors",
+                   level > 1 ? "ml-4 text-secondary opacity-60" : "text-tertiary font-bold"
+                 )}>
+                   <a href={`#${id}`} className="hover:underline tracking-tight uppercase">
+                      {text}
+                   </a>
+                 </li>
+               ))}
+               {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
+             </ul>
+
+             {post.tags && post.tags.length > 0 && (
+               <div className="mt-12 pt-8 border-t border-outline-variant">
+                 <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
+                 <div className="flex flex-wrap gap-2">
+                   {post.tags.map(tag => (
+                     <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
+                   ))}
+                 </div>
+               </div>
+             )}
+
+             {post.canonicalUrl && (
+               <div className="mt-12 pt-8 border-t border-outline-variant">
+                  <a 
+                    href={post.canonicalUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-[10px] font-mono text-secondary hover:text-tertiary transition-colors"
+                  >
+                    <ExternalLink size={14} /> CANONICAL SOURCE
+                  </a>
+               </div>
+             )}
           </div>
-        </div>
-      </article>
+        </aside>
+
+        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap">
+          <div className="prose-container">
+            {post.excerpt && (
+              <p className="text-headline-md italic font-serif text-secondary mb-12 border-l-4 border-outline-variant pl-8 py-2 leading-relaxed">
+                {post.excerpt}
+              </p>
+            )}
+            <MarkdownRenderer content={post.content} />
+          </div>
+        </article>
+      </div>
 
       <section className="bg-surface-container-low py-section-gap border-t border-outline-variant">
         <div className="max-w-container-max mx-auto px-margin-page">
           <div className="flex justify-between items-end mb-16">
             <h3 className="text-headline-lg text-tertiary">Related Discourse</h3>
-            <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all">VIEW ALL JOURNAL</Link>
+            <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all text-xs">VIEW FULL ARCHIVE</Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center py-12 italic text-secondary border border-dashed border-outline-variant">
-             Additional entries available in the full archive.
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {relatedPosts.map(related => (
+              <RelatedCard 
+                key={related.id}
+                id={related.id}
+                image={related.image || "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop"} 
+                category={related.category} 
+                title={related.title} 
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -148,16 +269,17 @@ function CommentSection({ postId }: { postId: string }) {
   return (
     <div className="max-w-[800px] mx-auto px-margin-page">
       <div className="mb-24">
-        <span className="text-label-caps text-secondary mb-4 block">ENGAGEMENT</span>
+        <span className="text-label-caps text-secondary mb-4 block text-[10px]">PARTICIPATION</span>
         <h2 className="text-display text-4xl mb-12">Public Responses.</h2>
         
         <form onSubmit={handleSubmit} className="space-y-8 border-b border-outline-variant pb-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-2">
-              <label className="text-label-caps text-[10px] text-secondary">YOUR NAME</label>
+              <label className="text-label-caps text-[10px] text-secondary">IDENTITY</label>
               <input 
                 type="text" 
                 required
+                placeholder="YOUR NAME"
                 className="bg-transparent border-b border-outline-variant py-2 focus:outline-none focus:border-tertiary transition-all text-body-md"
                 value={newComment.author}
                 onChange={(e) => setNewComment({...newComment, author: e.target.value})}
@@ -165,10 +287,11 @@ function CommentSection({ postId }: { postId: string }) {
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-label-caps text-[10px] text-secondary">YOUR THOUGHTS</label>
+            <label className="text-label-caps text-[10px] text-secondary">OBSERVATION</label>
             <textarea 
               required
               rows={4}
+              placeholder="SHARE YOUR PERSPECTIVE..."
               className="bg-transparent border-b border-outline-variant py-2 focus:outline-none focus:border-tertiary transition-all text-body-md resize-none"
               value={newComment.content}
               onChange={(e) => setNewComment({...newComment, content: e.target.value})}
@@ -179,7 +302,7 @@ function CommentSection({ postId }: { postId: string }) {
             disabled={isSubmitting}
             className="text-label-caps bg-tertiary text-white px-10 py-4 hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {isSubmitting ? 'SUBMITTING...' : 'SHARE RESPONSE'}
+            {isSubmitting ? 'TRANSMITTING...' : 'COMMIT RESPONSE'}
           </button>
         </form>
       </div>
@@ -187,7 +310,7 @@ function CommentSection({ postId }: { postId: string }) {
       <div className="space-y-16">
         {comments.length === 0 ? (
           <p className="text-body-lg text-secondary italic font-serif py-12">
-            No public responses yet. Be the first to start the discourse.
+            The transcript is currently silent. Be the first to initiate discourse.
           </p>
         ) : (
           comments.map((comment) => (
@@ -207,15 +330,15 @@ function CommentSection({ postId }: { postId: string }) {
   );
 }
 
-function RelatedCard({ image, vol, title }: { image: string, vol: string, title: string }) {
+function RelatedCard({ id, image, category, title }: { id: string, image: string, category: string, title: string }) {
   return (
-    <Link to="#" className="group flex flex-col gap-6">
-      <div className="w-full aspect-[4/5] bg-surface-container overflow-hidden">
-        <img src={image} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale group-hover:scale-105 transition-transform duration-700" alt={title} />
+    <Link to={`/article/${id}`} className="group flex flex-col gap-6">
+      <div className="w-full aspect-[16/10] bg-surface-container overflow-hidden">
+        <img src={image} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale group-hover:scale-105 group-hover:grayscale-0 transition-all duration-700" alt={title} />
       </div>
       <div className="flex flex-col gap-3">
-        <span className="text-label-caps text-secondary">{vol}</span>
-        <h4 className="text-headline-sm text-tertiary group-hover:underline decoration-1 underline-offset-4">{title}</h4>
+        <span className="text-label-caps text-secondary text-[10px]">{category}</span>
+        <h4 className="text-headline-sm text-tertiary group-hover:italic transition-all">{title}</h4>
       </div>
     </Link>
   );

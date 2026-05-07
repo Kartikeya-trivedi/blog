@@ -1,16 +1,41 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Search, X, Hash, Clock } from 'lucide-react';
 import { blogService, BlogPost } from '@/src/lib/blogService';
+import { cn } from '@/src/lib/utils';
 
 export default function JournalPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = blogService.getPosts().filter(p => p.status === 'PUBLISHED');
-    setPosts(stored);
+    setAllPosts(stored);
   }, []);
+
+  const allTags = useMemo(() => {
+    const tagsSet = new Set<string>();
+    allPosts.forEach(post => {
+      post.tags?.forEach(tag => tagsSet.add(tag));
+    });
+    return Array.from(tagsSet).sort();
+  }, [allPosts]);
+
+  const filteredPosts = useMemo(() => {
+    return allPosts.filter(post => {
+      const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesTag = !selectedTag || post.tags?.includes(selectedTag);
+      return matchesSearch && matchesTag;
+    });
+  }, [allPosts, searchQuery, selectedTag]);
+
+  const calculateReadTime = (content: string) => {
+    const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+    return Math.max(1, Math.ceil(words / 200));
+  };
 
   return (
     <motion.div
@@ -39,49 +64,131 @@ export default function JournalPage() {
             </motion.div>
           </div>
           <div className="col-span-12 md:col-start-3 md:col-span-8 text-center">
-            <span className="text-label-caps text-secondary mb-4 block">ESSAY — VOL. IV</span>
-            <h1 className="text-display mb-8">The Architecture of Silence: Finding Clarity in Modern Minimalism</h1>
+            <span className="text-label-caps text-secondary mb-4 block">ESSAY — VOL. V</span>
+            <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
             <p className="text-body-lg text-secondary mb-10 max-w-2xl mx-auto italic font-serif">
-              An exploration of how intentional physical spaces influence the cognitive depth of our creative output in an increasingly noisy digital landscape.
+              Exploring the downstream consequences of decisions in software, machine learning, and the pursuit of a meaningful life.
             </p>
             <Link 
-              to="/article/manifesto-minimalism" 
+              to="/archive" 
               className="inline-block border-b border-primary pb-1 text-label-caps hover:text-secondary hover:border-secondary transition-all"
             >
-              Read the Monograph
+              The Full Perspective
             </Link>
           </div>
         </div>
       </section>
 
+      {/* Utilities: Search & Tags */}
+      <section className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-outline-variant">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search the editorial..."
+            className="w-full bg-surface-container border-0 pl-12 pr-4 py-3 text-body-md focus:outline-none focus:ring-1 focus:ring-tertiary transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-tertiary"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {allTags.slice(0, 6).map(tag => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              className={cn(
+                "px-4 py-1.5 text-[10px] font-mono border rounded-full transition-all flex items-center gap-1.5",
+                selectedTag === tag 
+                  ? "bg-tertiary text-white border-tertiary shadow-lg" 
+                  : "border-outline-variant text-secondary hover:border-tertiary hover:text-tertiary"
+              )}
+            >
+              <Hash size={10} /> {tag.toUpperCase()}
+            </button>
+          ))}
+          {selectedTag && (
+            <button 
+              onClick={() => setSelectedTag(null)}
+              className="px-4 py-1.5 text-[10px] font-mono border border-transparent text-secondary hover:text-tertiary underline decoration-dotted"
+            >
+              CLEAR FILTER
+            </button>
+          )}
+        </div>
+      </section>
+
       {/* Content Grid */}
-      <section className="grid grid-cols-12 gap-8 border-t border-outline-variant pt-16 mb-section-gap">
+      <section className="grid grid-cols-12 gap-8 pt-4 mb-section-gap">
         <div className="col-span-12 md:col-span-8">
-          <h2 className="text-label-caps text-tertiary mb-12">RECENT ENTRIES</h2>
+          <div className="flex justify-between items-baseline mb-12">
+            <h2 className="text-label-caps text-tertiary">
+              {selectedTag ? `CATEGORIZED: ${selectedTag}` : searchQuery ? `SEARCH RESULTS FOR: ${searchQuery}` : "NOTES ON SYSTEMS & BUILDING"}
+            </h2>
+            <span className="text-[10px] font-mono text-secondary">{filteredPosts.length} ENTRIES</span>
+          </div>
+          
           <div className="space-y-0">
-            {posts.length === 0 ? (
-              <p className="py-24 text-center text-body-lg text-secondary italic border-b border-outline-variant">
-                The archives are currently quiet. Stay tuned for new entries.
-              </p>
-            ) : (
-              posts.map((article) => (
-                <Link 
-                  key={article.id} 
-                  to={`/article/${article.id}`}
-                  className="group block border-b border-outline-variant py-12 first:pt-0"
+            <AnimatePresence mode="popLayout">
+              {filteredPosts.length === 0 ? (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="py-24 text-center text-body-lg text-secondary italic border-b border-outline-variant"
                 >
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="flex-1">
-                      <span className="text-label-caps text-secondary block mb-2">{article.date} — {article.category}</span>
-                      <h3 className="text-headline-md group-hover:italic transition-all duration-300">{article.title}</h3>
-                    </div>
-                    <motion.div whileHover={{ x: 8 }}>
-                      <ArrowRight size={24} className="text-outline group-hover:text-tertiary transition-colors" />
-                    </motion.div>
-                  </div>
-                </Link>
-              ))
-            )}
+                  No match found for your inquiry.
+                </motion.p>
+              ) : (
+                filteredPosts.map((article) => (
+                  <motion.div
+                    key={article.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <Link 
+                      to={`/article/${article.id}`}
+                      className="group block border-b border-outline-variant py-12 first:pt-0"
+                    >
+                      <div className="flex justify-between items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-4 mb-2">
+                             <span className="text-label-caps text-secondary text-[10px]">{article.date} — {article.category}</span>
+                             <div className="flex items-center gap-1 text-[10px] font-mono text-secondary opacity-60">
+                               <Clock size={10} /> {calculateReadTime(article.content)} MIN READ
+                             </div>
+                          </div>
+                          <h3 className="text-headline-md group-hover:italic transition-all duration-300">{article.title}</h3>
+                          {article.excerpt && (
+                            <p className="mt-4 text-body-md text-secondary line-clamp-2 italic font-serif max-w-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+                              {article.excerpt}
+                            </p>
+                          )}
+                          <div className="mt-4 flex gap-2 flex-wrap">
+                            {article.tags?.map(tag => (
+                              <span key={tag} className="text-[9px] font-mono text-secondary/60 bg-surface-container px-2 py-0.5 rounded italic">#{tag.toLowerCase()}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <motion.div whileHover={{ x: 8 }} className="hidden sm:block">
+                          <ArrowRight size={24} className="text-outline group-hover:text-tertiary transition-colors" />
+                        </motion.div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
           </div>
           <div className="mt-16">
             <Link to="/archive" className="text-label-caps border border-tertiary px-10 py-4 hover:bg-tertiary hover:text-white transition-all inline-block">
@@ -91,28 +198,31 @@ export default function JournalPage() {
         </div>
 
         {/* Sidebar */}
-        <aside className="col-span-12 md:col-start-10 md:col-span-3 mt-24 md:mt-0">
-          <div className="sticky top-24">
-            <div className="w-24 h-24 mb-8 grayscale overflow-hidden">
+        <aside className="col-span-12 md:col-start-10 md:col-span-3">
+          <div className="sticky top-32">
+            <div className="w-24 h-24 mb-8 grayscale overflow-hidden border border-outline-variant hover:grayscale-0 transition-all duration-1000">
               <img 
-                alt="Kartikeya Trivedi" 
+                alt="Portrait" 
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0LGkvhkPCr6J-Fs2Oilt4wanvbZA_Y6xLwTx_Ce4LUX6kCZTBCW-5RT1bPHe-G-ZORF3yIwXBfXRJBPMYpOPE1jNZnheXo61NCzHr90XXd2W37yqpsl629OOYzHu39P9LQ1hxZlp1y2-ZWc8F_NewQpvHCTJMizQVirFu7sJxVb03YrI4RATY48lYvVLWPNiOkbAyHX40G62oxzK_FzM90MK8n2baTd5aMUE-Z977aZ7UxOMsbreI_apgNvsEBbnR3TnHvToHVHM" 
+                src="/me.jpg" 
               />
             </div>
-            <h4 className="text-headline-sm mb-4">Kartikeya Trivedi</h4>
+            <h4 className="text-headline-sm mb-4">The Editorial</h4>
             <p className="text-body-md text-secondary mb-8">
-              Writer and curator exploring the intersection of modern architecture, minimalist design, and the digital human experience.
+              The personal journal and repository of Kartikeya. Researcher, Builder, and CS student exploring technical depth.
             </p>
-            <div className="space-y-4">
-              <a href="mailto:hello@theeditorial.com" className="flex items-center gap-2 text-label-caps text-tertiary hover:text-secondary transition-colors">
+            <div className="space-y-4 pt-8 border-t border-outline-variant">
+              <a href="mailto:hello@kartikeya.build" className="flex items-center gap-2 text-label-caps text-tertiary hover:text-secondary transition-colors text-[10px]">
                 CORRESPONDENCE
               </a>
-              <a href="#" className="flex items-center gap-2 text-label-caps text-tertiary hover:text-secondary transition-colors">
-                RSS SUBSCRIPTION
-              </a>
+              <Link to="/portfolio" className="flex items-center gap-2 text-label-caps text-tertiary hover:text-secondary transition-colors text-[10px]">
+                PORTFOLIO
+              </Link>
+              <Link to="/archive" className="flex items-center gap-2 text-label-caps text-tertiary hover:text-secondary transition-colors text-[10px]">
+                THE ARCHIVES
+              </Link>
             </div>
           </div>
         </aside>

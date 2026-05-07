@@ -14,7 +14,7 @@ export function Navbar() {
   return (
     <nav className="bg-background border-b border-outline-variant sticky top-0 z-50">
       <div className="flex justify-between items-center w-full px-margin-page py-6 max-w-container-max mx-auto">
-        <Link to="/" className="font-serif text-headline-md text-tertiary tracking-tight">
+        <Link to="/" className="font-serif text-headline-md text-tertiary tracking-tight uppercase">
           The Editorial
         </Link>
         <div className="hidden md:flex items-center gap-10">
@@ -57,7 +57,7 @@ export function Footer() {
           <Link to="#" className="text-secondary text-label-caps hover:text-tertiary underline decoration-1 underline-offset-4 transition-all tracking-widest">Privacy</Link>
         </div>
         <div className="text-body-md text-secondary">
-          © 2024 The Editorial. All rights reserved.
+          © 2024 Kartikeya Trivedi. लखनऊ to the world.
         </div>
       </div>
     </footer>

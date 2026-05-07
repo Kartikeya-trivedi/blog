@@ -7,28 +7,28 @@ const archives = [
     period: 'WINTER 2024',
     status: 'ACTIVE',
     entries: 12,
-    subjects: ['Architecture', 'Digital Theory', 'Quiet Minimalism']
+    subjects: ['Gen AI', 'Machine Learning', 'Systems Design']
   },
   {
     volume: 'III',
     period: 'SUMMER 2024',
     status: 'ARCHIVED',
     entries: 15,
-    subjects: ['Typography', 'Tactility', 'Brutalism']
+    subjects: ['Formula 1', 'Engineering', 'Strategy']
   },
   {
     volume: 'II',
     period: 'WINTER 2023',
     status: 'ARCHIVED',
     entries: 10,
-    subjects: ['Curation', 'Personal Library', 'Physical Form']
+    subjects: ['Cricket', 'Pattern Recognition', 'Opinion']
   },
   {
     volume: 'I',
     period: 'SUMMER 2023',
     status: 'ARCHIVED',
     entries: 8,
-    subjects: ['Foundations', 'The Grid', 'Monochromatic Life']
+    subjects: ['Philosophy', 'Stoicism', 'Foundations']
   }
 ];
 

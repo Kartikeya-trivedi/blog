@@ -9,6 +9,10 @@ export interface BlogPost {
   author: string;
   status: 'DRAFT' | 'PUBLISHED';
   image?: string;
+  tags?: string[];
+  series?: string;
+  seriesOrder?: number;
+  canonicalUrl?: string;
 }
 
 export interface BlogComment {
