@@ -425,10 +425,11 @@ export default function WritePostPage() {
                 <MarkdownRenderer content={post.content || '_No content written yet._'} />
               </div>
             )}
-          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
+  </div>
+</motion.div>
   );
 }
 
