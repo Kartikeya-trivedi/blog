@@ -1,36 +1,7 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 
-const archives = [
-  {
-    volume: 'IV',
-    period: 'WINTER 2024',
-    status: 'ACTIVE',
-    entries: 12,
-    subjects: ['Gen AI', 'Machine Learning', 'Systems Design']
-  },
-  {
-    volume: 'III',
-    period: 'SUMMER 2024',
-    status: 'ARCHIVED',
-    entries: 15,
-    subjects: ['Formula 1', 'Engineering', 'Strategy']
-  },
-  {
-    volume: 'II',
-    period: 'WINTER 2023',
-    status: 'ARCHIVED',
-    entries: 10,
-    subjects: ['Cricket', 'Pattern Recognition', 'Opinion']
-  },
-  {
-    volume: 'I',
-    period: 'SUMMER 2023',
-    status: 'ARCHIVED',
-    entries: 8,
-    subjects: ['Philosophy', 'Stoicism', 'Foundations']
-  }
-];
+import { archives } from '../lib/data';
 
 export default function ArchivePage() {
   return (
@@ -61,7 +32,7 @@ export default function ArchivePage() {
                 <p className="text-label-caps text-secondary mb-1">PERIOD</p>
                 <p className="text-body-md font-bold">{archive.period}</p>
               </div>
-              <div className="col-span-6 md:col-span-4">
+              <div className="col-span-6 md:col-span-6">
                 <p className="text-label-caps text-secondary mb-1">SUBJECTS</p>
                 <div className="flex flex-wrap gap-2">
                   {archive.subjects.map(s => (
@@ -69,11 +40,7 @@ export default function ArchivePage() {
                   ))}
                 </div>
               </div>
-              <div className="col-span-6 md:col-span-2">
-                <p className="text-label-caps text-secondary mb-1">ENTRIES</p>
-                <p className="text-body-md">{archive.entries} ARTICLES</p>
-              </div>
-              <div className="col-span-6 md:col-span-1 text-right">
+              <div className="col-span-12 md:col-span-1 text-right">
                 <span className={archive.status === 'ACTIVE' ? 'text-on-tertiary-fixed-variant' : 'text-secondary opacity-50'}>
                   {archive.status}
                 </span>

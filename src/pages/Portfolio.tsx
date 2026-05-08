@@ -1,40 +1,8 @@
 import { motion } from 'motion/react';
 import { Circle, Square, Layout, PenTool, Image as LucideImage, Type } from 'lucide-react';
+import { projects, milestones } from '../lib/data';
 
-const projects = [
-  {
-    id: 1,
-    title: 'ShowKase',
-    desc: 'An AI-powered portfolio tool for builders to tell their stories.',
-    year: '2024',
-    image: 'https://images.unsplash.com/photo-1551288049-bbbda536639a?q=80&w=2070&auto=format&fit=crop',
-    cols: 'col-span-12 md:col-span-8'
-  },
-  {
-    id: 2,
-    title: 'Mindrix',
-    desc: 'Co-founded an AI startup focused on cutting-edge solutions.',
-    year: '2023',
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=2070&auto=format&fit=crop',
-    cols: 'col-span-12 md:col-span-4 mt-0 md:mt-24'
-  },
-  {
-    id: 3,
-    title: 'Multimodal AI Research',
-    desc: 'Research on benchmarking targeting top NLP venues.',
-    year: '2024',
-    image: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop',
-    cols: 'col-span-12 md:col-span-4'
-  },
-  {
-    id: 4,
-    title: 'MLSA KIIT vertical',
-    desc: 'Leading the ML vertical and community teaching events.',
-    year: '2023',
-    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop',
-    cols: 'col-span-12 md:col-span-8'
-  }
-];
+
 
 export default function PortfolioPage() {
   return (
@@ -60,7 +28,7 @@ export default function PortfolioPage() {
             loading="lazy"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover grayscale brightness-90 contrast-110" 
-            src="/me.jpg" 
+            src="/me.jpeg" 
             alt="Portrait - The Editorial"
           />
         </div>
@@ -119,7 +87,7 @@ export default function PortfolioPage() {
             <div className="border-l border-outline-variant pl-8">
               <h4 className="text-label-caps text-secondary mb-6">PHILOSOPHY & LEADERSHIP</h4>
               <ul className="space-y-4">
-                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">ML Vertical Lead @ MLSA KIIT</span></li>
+                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">ML Domain Lead @ MLSA KIIT</span></li>
                 <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Technical Teaching & Community</span></li>
                 <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Stoic Grounding (Marcus Aurelius)</span></li>
                 <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Strategic Thinking (F1 & Cricket)</span></li>
@@ -129,9 +97,9 @@ export default function PortfolioPage() {
             <div className="col-span-12 border-t border-outline-variant pt-16 mt-8">
               <h4 className="text-label-caps text-secondary mb-8">MILESTONES</h4>
               <div className="space-y-8">
-                <HistoryItem title="Co-Founder, Mindrix" date="2023 — PRESENT" />
-                <HistoryItem title="Research Lead, MLSA KIIT" date="2023 — PRESENT" />
-                <HistoryItem title="Core Member, KIIT Computer Science" date="2022 — PRESENT" />
+                {milestones.map((milestone, idx) => (
+                  <HistoryItem key={idx} title={milestone.title} date={milestone.date} />
+                ))}
               </div>
             </div>
           </div>

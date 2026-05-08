@@ -7,12 +7,18 @@ import { cn } from '@/src/lib/utils';
 
 export default function JournalPage() {
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = blogService.getPosts().filter(p => p.status === 'PUBLISHED');
-    setAllPosts(stored);
+    const fetchPosts = async () => {
+      setLoading(true);
+      const posts = await blogService.getPosts();
+      setAllPosts(posts.filter(p => p.status === 'PUBLISHED'));
+      setLoading(false);
+    };
+    fetchPosts();
   }, []);
 
   const allTags = useMemo(() => {
@@ -59,7 +65,7 @@ export default function JournalPage() {
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-1000" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC299pS3S3pdd7coXossBSS-XnnoIdNtauaFzXqtogbBvqrypZ3zEDTqXF1_fhP2pywfPoxXmocpCaJ1_bYfoB3Sl6HXApSbIY7wWDMWgaVMIi-3wuN0X1lORmsQ2BKN2sdAC3GVQIcmrf85G8M23K0Y2gQCO4pbcpd87yuCej6KcepdTdCUcNzfP0-1jxCighj3dno0tBHLzv1_NmFHz0RU1DOfaeF63es97IQb1tu6BJzxkaugVoTlUg7IpVtRVMkK5YtjbTzBxE" 
+                src="/chair.jpeg" 
               />
             </motion.div>
           </div>
@@ -138,7 +144,9 @@ export default function JournalPage() {
           
           <div className="space-y-0">
             <AnimatePresence mode="popLayout">
-              {filteredPosts.length === 0 ? (
+              {loading ? (
+                <div className="py-24 text-center text-label-caps animate-pulse">RECOVERING DATA FROM CLOUD ARCHIVE...</div>
+              ) : filteredPosts.length === 0 ? (
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -206,7 +214,7 @@ export default function JournalPage() {
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover" 
-                src="/me.jpg" 
+                src="/me.jpeg" 
               />
             </div>
             <h4 className="text-headline-sm mb-4">The Editorial</h4>
@@ -230,4 +238,3 @@ export default function JournalPage() {
     </motion.div>
   );
 }
-

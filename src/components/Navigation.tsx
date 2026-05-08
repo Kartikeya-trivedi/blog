@@ -35,7 +35,7 @@ export function Navbar() {
           })}
         </div>
         <Link 
-          to="/admin" 
+          to="/sign-in" 
           className="bg-tertiary text-white px-6 py-2 text-label-caps hover:bg-secondary transition-all"
         >
           Sign In

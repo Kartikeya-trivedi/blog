@@ -11,6 +11,7 @@ export default function ArticlePage() {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<any[]>([]);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -19,17 +20,24 @@ export default function ArticlePage() {
   });
 
   useEffect(() => {
-    if (id) {
-      const data = blogService.getPostById(id);
-      if (data) {
-        setPost(data);
-        const all = blogService.getPosts().filter(p => p.id !== id && p.status === 'PUBLISHED');
-        const sameCategory = all.filter(p => p.category === data.category);
-        setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
+    const fetchPost = async () => {
+      if (id) {
+        setLoading(true);
+        const data = await blogService.getPostById(id);
+        if (data) {
+          setPost(data);
+          const all = (await blogService.getPosts()).filter(p => p.id !== id && p.status === 'PUBLISHED');
+          const sameCategory = all.filter(p => p.category === data.category);
+          setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
+          
+          const postComments = await blogService.getComments(id);
+          setComments(postComments);
+        }
       }
-    }
-    setLoading(false);
-    window.scrollTo(0, 0);
+      setLoading(false);
+      window.scrollTo(0, 0);
+    };
+    fetchPost();
   }, [id]);
 
   const toc = useMemo(() => {
@@ -58,11 +66,17 @@ export default function ArticlePage() {
       window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
     } else if (platform === 'copy') {
       navigator.clipboard.writeText(url);
-      // Optional: show toast
     }
   };
 
-  if (loading) return <div className="py-24 text-center text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
+  const onCommentAdded = async () => {
+    if (id) {
+      const postComments = await blogService.getComments(id);
+      setComments(postComments);
+    }
+  };
+
+  if (loading) return <div className="py-48 text-center text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
 
   if (!post) {
     return (
@@ -234,36 +248,34 @@ export default function ArticlePage() {
 
       {/* Comment Section */}
       <section className="py-section-gap bg-background border-t border-outline-variant">
-        <CommentSection postId={post.id} />
+        <CommentSection postId={post.id} comments={comments} onCommentAdded={onCommentAdded} />
       </section>
     </motion.div>
   );
 }
 
-function CommentSection({ postId }: { postId: string }) {
-  const [comments, setComments] = useState<any[]>([]);
+function CommentSection({ postId, comments, onCommentAdded }: { postId: string, comments: any[], onCommentAdded: () => void }) {
   const [newComment, setNewComment] = useState({ author: '', content: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    setComments(blogService.getComments(postId));
-  }, [postId]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.author.trim() || !newComment.content.trim()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      blogService.addComment({
+    try {
+      await blogService.addComment({
         postId,
         author: newComment.author,
         content: newComment.content
       });
-      setComments(blogService.getComments(postId));
+      onCommentAdded();
       setNewComment({ author: '', content: '' });
+    } catch (e) {
+      alert('Failed to post comment.');
+    } finally {
       setIsSubmitting(false);
-    }, 500);
+    }
   };
 
   return (

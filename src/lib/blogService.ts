@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 
 export interface BlogPost {
   id: string;
@@ -13,6 +14,7 @@ export interface BlogPost {
   series?: string;
   seriesOrder?: number;
   canonicalUrl?: string;
+  volume?: string;
 }
 
 export interface BlogComment {
@@ -23,51 +25,80 @@ export interface BlogComment {
   date: string;
 }
 
-const STORAGE_KEY = 'the_editorial_blogs';
-const COMMENTS_KEY = 'the_editorial_comments';
-
 export const blogService = {
-  getPosts: (): BlogPost[] => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  },
-
-  getPostById: (id: string): BlogPost | undefined => {
-    return blogService.getPosts().find(p => p.id === id);
-  },
-
-  savePost: (post: BlogPost) => {
-    const posts = blogService.getPosts();
-    const index = posts.findIndex(p => p.id === post.id);
-    if (index >= 0) {
-      posts[index] = post;
-    } else {
-      posts.unshift(post);
+  getPosts: async (): Promise<BlogPost[]> => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching posts:', error);
+      return [];
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    return data as BlogPost[];
   },
 
-  deletePost: (id: string) => {
-    const posts = blogService.getPosts().filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  getPostById: async (id: string): Promise<BlogPost | undefined> => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching post:', error);
+      return undefined;
+    }
+    return data as BlogPost;
   },
 
-  getComments: (postId: string): BlogComment[] => {
-    const stored = localStorage.getItem(COMMENTS_KEY);
-    const allComments: BlogComment[] = stored ? JSON.parse(stored) : [];
-    return allComments.filter(c => c.postId === postId);
+  savePost: async (post: BlogPost) => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .upsert({
+        ...post,
+        // Ensure ID is valid UUID or let Supabase generate it
+        id: post.id.includes('-') ? post.id : undefined 
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
-  addComment: (comment: Omit<BlogComment, 'id' | 'date'>) => {
-    const stored = localStorage.getItem(COMMENTS_KEY);
-    const allComments: BlogComment[] = stored ? JSON.parse(stored) : [];
-    const newComment: BlogComment = {
-      ...comment,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    };
-    allComments.unshift(newComment);
-    localStorage.setItem(COMMENTS_KEY, JSON.stringify(allComments));
-    return newComment;
+  deletePost: async (id: string) => {
+    const { error } = await supabase
+      .from('blogs')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
+  getComments: async (postId: string): Promise<BlogComment[]> => {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('postId', postId)
+      .order('created_at', { ascending: false });
+    
+    if (error) return [];
+    return data as BlogComment[];
+  },
+
+  addComment: async (comment: Omit<BlogComment, 'id' | 'date'>) => {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        ...comment,
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 };
