@@ -40,8 +40,9 @@ function mapRowToPost(row: any): BlogPost {
     image: row.image ?? undefined,
     tags: row.tags ?? [],
     series: row.series ?? undefined,
-    seriesOrder: row.series_order ?? undefined,
-    canonicalUrl: row.canonical_url ?? undefined,
+    // Try both snake_case and camelCase
+    seriesOrder: row.series_order ?? row.seriesOrder ?? undefined,
+    canonicalUrl: row.canonical_url ?? row.canonicalUrl ?? undefined,
     volume: row.volume ?? undefined,
   };
 }
@@ -51,7 +52,7 @@ function mapRowToPost(row: any): BlogPost {
 function mapRowToComment(row: any): BlogComment {
   return {
     id: row.id,
-    postId: row.post_id,
+    postId: row.post_id ?? row.postId,
     author: row.author,
     content: row.content,
     date: row.date,
@@ -66,7 +67,8 @@ export const blogService = {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Supabase getPosts error:', error);
+      console.error('Details:', error.details);
       return [];
     }
     return (data ?? []).map(mapRowToPost);
@@ -116,7 +118,10 @@ export const blogService = {
       .single();
 
     if (error) {
-      console.error('Supabase savePost error:', error);
+      console.error('Supabase savePost full error:', error);
+      console.error('Error Message:', error.message);
+      console.error('Error Details:', error.details);
+      console.error('Error Hint:', error.hint);
       throw new Error(`${error.message} (code: ${error.code})`);
     }
     return data;
@@ -155,7 +160,9 @@ export const blogService = {
       .single();
     
     if (error) {
-      console.error('Supabase addComment error:', error);
+      console.error('Supabase addComment full error:', error);
+      console.error('Error Message:', error.message);
+      console.error('Error Details:', error.details);
       throw new Error(`${error.message} (code: ${error.code})`);
     }
     return mapRowToComment(data);
