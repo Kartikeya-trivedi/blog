@@ -49,20 +49,9 @@ export default function WritePostPage() {
   // Note: Local upload will still fail on Vercel unless using Vercel Blob. 
   // We recommend using external URLs for images for now or Vercel Blob later.
   const uploadImage = async (file: File) => {
-    const formData = new FormData();
-    formData.append('image', file);
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-
-      const data = await response.json();
-      const imageUrl = data.url;
-
+      const imageUrl = await blogService.uploadImage(file);
+      
       const textarea = textareaRef.current;
       if (!textarea) return;
 
@@ -81,7 +70,7 @@ export default function WritePostPage() {
       });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Image upload requires a running backend. On Vercel, please use direct image URLs in your markdown.');
+      alert('Failed to upload image. Please ensure you have a public "blog-images" bucket in your Supabase storage.');
     }
   };
 

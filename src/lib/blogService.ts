@@ -166,5 +166,26 @@ export const blogService = {
       throw new Error(`${error.message} (code: ${error.code})`);
     }
     return mapRowToComment(data);
+  },
+
+  uploadImage: async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('blog-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('blog-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   }
 };

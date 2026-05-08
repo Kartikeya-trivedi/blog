@@ -5,8 +5,19 @@ export interface PageView {
   path: string;
   title: string;
   referrer: string;
-  created_at: string;
-  session_id: string;
+  timestamp: string;
+  sessionId: string;
+}
+
+function mapRowToView(row: any): PageView {
+  return {
+    id: row.id,
+    path: row.path,
+    title: row.title,
+    referrer: row.referrer,
+    timestamp: row.created_at,
+    sessionId: row.session_id,
+  };
 }
 
 export interface AnalyticsSummary {
@@ -134,7 +145,7 @@ export const analyticsClient = {
         viewsByDay,
         viewsByHour,
         topPages,
-        recentViews: views.slice(-25).reverse() as any,
+        recentViews: views.slice(-25).reverse().map(mapRowToView),
         thisMonthViews,
         lastMonthViews
       };
@@ -152,6 +163,6 @@ export const analyticsClient = {
       .limit(limit);
     
     if (error) throw error;
-    return data as any;
+    return (data ?? []).map(mapRowToView);
   },
 };
