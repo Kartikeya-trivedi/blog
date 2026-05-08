@@ -19,7 +19,12 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setPosts(blogService.getPosts());
+    const fetchPosts = async () => {
+      const data = await blogService.getPosts();
+      setPosts(data);
+    };
+
+    fetchPosts();
 
     // Fetch real visitor data for the chart
     analyticsClient.getSummary().then((summary) => {
@@ -37,10 +42,11 @@ export default function DashboardPage() {
     });
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this entry?')) {
-      blogService.deletePost(id);
-      setPosts(blogService.getPosts());
+      await blogService.deletePost(id);
+      const data = await blogService.getPosts();
+      setPosts(data);
     }
   };
 
