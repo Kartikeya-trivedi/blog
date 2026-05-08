@@ -150,7 +150,9 @@ export default function WritePostPage() {
       await blogService.savePost(finalPost);
       navigate('/admin');
     } catch (e) {
-      alert('Failed to save to cloud archive.');
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      alert(`Failed to save to cloud archive.\n\nDetails: ${message}`);
+      console.error('Save error:', e);
     } finally {
       setIsSaving(false);
     }

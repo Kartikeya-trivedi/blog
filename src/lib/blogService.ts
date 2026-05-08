@@ -25,6 +25,39 @@ export interface BlogComment {
   date: string;
 }
 
+// Map raw Supabase row (snake_case) back to camelCase BlogPost
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRowToPost(row: any): BlogPost {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    excerpt: row.excerpt,
+    category: row.category,
+    date: row.date,
+    author: row.author,
+    status: row.status,
+    image: row.image ?? undefined,
+    tags: row.tags ?? [],
+    series: row.series ?? undefined,
+    seriesOrder: row.series_order ?? undefined,
+    canonicalUrl: row.canonical_url ?? undefined,
+    volume: row.volume ?? undefined,
+  };
+}
+
+// Map raw Supabase row (snake_case) back to camelCase BlogComment
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRowToComment(row: any): BlogComment {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    author: row.author,
+    content: row.content,
+    date: row.date,
+  };
+}
+
 export const blogService = {
   getPosts: async (): Promise<BlogPost[]> => {
     const { data, error } = await supabase
@@ -36,7 +69,7 @@ export const blogService = {
       console.error('Error fetching posts:', error);
       return [];
     }
-    return data as BlogPost[];
+    return (data ?? []).map(mapRowToPost);
   },
 
   getPostById: async (id: string): Promise<BlogPost | undefined> => {
@@ -50,21 +83,42 @@ export const blogService = {
       console.error('Error fetching post:', error);
       return undefined;
     }
-    return data as BlogPost;
+    return mapRowToPost(data);
   },
 
   savePost: async (post: BlogPost) => {
+    // Map camelCase JS fields to snake_case DB columns
+    const payload: Record<string, unknown> = {
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+      category: post.category,
+      date: post.date,
+      author: post.author,
+      status: post.status,
+      image: post.image ?? null,
+      tags: post.tags ?? [],
+      series: post.series ?? null,
+      series_order: post.seriesOrder ?? null,
+      canonical_url: post.canonicalUrl ?? null,
+      volume: post.volume ?? null,
+    };
+
+    // Only include id if it's a valid UUID (edit). Let Supabase generate for new posts.
+    if (post.id && post.id.includes('-')) {
+      payload.id = post.id;
+    }
+
     const { data, error } = await supabase
       .from('blogs')
-      .upsert({
-        ...post,
-        // Ensure ID is valid UUID or let Supabase generate it
-        id: post.id.includes('-') ? post.id : undefined 
-      })
+      .upsert(payload)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase savePost error:', error);
+      throw new Error(`${error.message} (code: ${error.code})`);
+    }
     return data;
   },
 
@@ -81,24 +135,29 @@ export const blogService = {
     const { data, error } = await supabase
       .from('comments')
       .select('*')
-      .eq('postId', postId)
+      .eq('post_id', postId)
       .order('created_at', { ascending: false });
     
     if (error) return [];
-    return data as BlogComment[];
+    return (data ?? []).map(mapRowToComment);
   },
 
   addComment: async (comment: Omit<BlogComment, 'id' | 'date'>) => {
     const { data, error } = await supabase
       .from('comments')
       .insert({
-        ...comment,
+        post_id: comment.postId,
+        author: comment.author,
+        content: comment.content,
         date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       })
       .select()
       .single();
     
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Supabase addComment error:', error);
+      throw new Error(`${error.message} (code: ${error.code})`);
+    }
+    return mapRowToComment(data);
   }
 };
