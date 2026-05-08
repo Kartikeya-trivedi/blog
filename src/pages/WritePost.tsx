@@ -356,7 +356,7 @@ export default function WritePostPage() {
                 <ul className="space-y-1 list-disc pl-3">
                   <li>Math: Use $...$ for inline or $$...$$ for block LaTeX.</li>
                   <li>Diagrams: Use ```mermaid code blocks.</li>
-                  <li>Images: On Vercel, use direct URLs.</li>
+                  <li>Images: Paste, drop, or upload to Cloud Storage.</li>
                 </ul>
               </div>
             </div>
@@ -390,7 +390,14 @@ export default function WritePostPage() {
                   <ToolbarButton icon={<Sigma size={14} />} onClick={() => insertText('$', '$')} title="Inline Math" />
                   <ToolbarButton icon={<Share2 size={14} />} onClick={() => insertText('```mermaid\ngraph TD;\n  A-->B;\n```', '')} title="Mermaid Diagram" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
-                  <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => alert('For Vercel deployment, please paste image URLs directly.')} title="Insert Image" />
+                  <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => fileInputRef.current?.click()} title="Insert Image" />
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleImageUpload} 
+                  />
                 </div>
                 
                 <div className="relative group/editor">
@@ -403,6 +410,9 @@ export default function WritePostPage() {
                     )}
                     value={post.content}
                     onChange={(e) => setPost({ ...post, content: e.target.value })}
+                    onPaste={handlePaste}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
                   />
                 </div>
               </div>

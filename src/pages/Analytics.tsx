@@ -105,10 +105,9 @@ export default function AnalyticsPage() {
 
   const kpiCards = [
     {
-      label: 'Page Views Today',
-      value: summary.todayViews.toLocaleString(),
-      change: summary.changePercent,
-      icon: Eye,
+      label: 'Unique Visitors Today',
+      value: summary.todayUniqueVisitors.toLocaleString(),
+      icon: Users,
       accent: false,
     },
     {

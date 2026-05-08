@@ -34,6 +34,8 @@ export interface AnalyticsSummary {
   recentViews: PageView[];
   thisMonthViews: number;
   lastMonthViews: number;
+  uniqueVisitors: number;
+  todayUniqueVisitors: number;
 }
 
 function getSessionId(): string {
@@ -134,6 +136,10 @@ export const analyticsClient = {
       const thisMonthViews = views.filter(v => v.created_at >= thisMonthStart).length;
       const lastMonthViews = views.filter(v => v.created_at >= lastMonthStart && v.created_at < thisMonthStart).length;
 
+      // Unique Visitors (Distinct Sessions)
+      const uniqueSessions = new Set(views.map(v => v.session_id));
+      const todaySessions = new Set(views.filter(v => v.created_at >= todayStart).map(v => v.session_id));
+
       return {
         totalViews: views.length,
         todayViews,
@@ -147,7 +153,9 @@ export const analyticsClient = {
         topPages,
         recentViews: views.slice(-25).reverse().map(mapRowToView),
         thisMonthViews,
-        lastMonthViews
+        lastMonthViews,
+        uniqueVisitors: uniqueSessions.size,
+        todayUniqueVisitors: todaySessions.size
       };
     } catch (e) {
       console.error('Failed to compute summary:', e);
