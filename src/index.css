@@ -63,3 +63,36 @@
     @apply text-[48px];
   }
 }
+
+.caption {
+  @apply block text-center text-[11px] font-mono text-secondary mt-[-24px] mb-8 uppercase tracking-widest opacity-70;
+}
+
+/* Technical Writing Enhancements */
+.markdown-content {
+  @apply scroll-smooth;
+}
+
+.markdown-content sup {
+  @apply text-tertiary font-bold px-0.5;
+}
+
+.markdown-content .footnotes {
+  @apply mt-24 pt-12 border-t border-outline-variant text-secondary font-mono text-[12px] opacity-80;
+}
+
+.markdown-content .footnotes hr {
+  @apply hidden;
+}
+
+.markdown-content del {
+  @apply text-secondary opacity-50 line-through;
+}
+
+.markdown-content input[type="checkbox"] {
+  @apply mr-3 accent-tertiary;
+}
+
+.markdown-content table {
+  @apply shadow-sm;
+}

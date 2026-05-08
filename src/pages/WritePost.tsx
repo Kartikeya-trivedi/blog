@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
 import { cn } from '@/src/lib/utils';
-import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2 } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2, Type } from 'lucide-react';
 import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
 
 export default function WritePostPage() {
@@ -357,6 +357,7 @@ export default function WritePostPage() {
                   <li>Math: Use $...$ for inline or $$...$$ for block LaTeX.</li>
                   <li>Diagrams: Use ```mermaid code blocks.</li>
                   <li>Images: Paste, drop, or upload to Cloud Storage.</li>
+                  <li>Captions: Use &lt;div class="caption"&gt;Text&lt;/div&gt;</li>
                 </ul>
               </div>
             </div>
@@ -388,6 +389,7 @@ export default function WritePostPage() {
                   <ToolbarButton icon={<Lightbulb size={14} />} onClick={() => insertText('<div class="callout-tip">\n\n', '\n\n</div>')} title="Tip Callout" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
                   <ToolbarButton icon={<Sigma size={14} />} onClick={() => insertText('$', '$')} title="Inline Math" />
+                  <ToolbarButton icon={<Type size={14} />} onClick={() => insertText('<div class="caption">', '</div>')} title="Add Caption" />
                   <ToolbarButton icon={<Share2 size={14} />} onClick={() => insertText('```mermaid\ngraph TD;\n  A-->B;\n```', '')} title="Mermaid Diagram" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
                   <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => fileInputRef.current?.click()} title="Insert Image" />

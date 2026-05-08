@@ -11,6 +11,7 @@ import ArchivePage from './pages/Archive';
 import WritePostPage from './pages/WritePost';
 import SignInPage from './pages/SignIn';
 import AnalyticsPage from './pages/Analytics';
+import SettingsPage from './pages/Settings';
 import { analyticsClient } from './lib/analyticsService';
 
 // Auth guard component
@@ -62,6 +63,7 @@ function AnimatedRoutes() {
           <Route path="/admin/write" element={<RequireAuth><WritePostPage /></RequireAuth>} />
           <Route path="/admin/edit/:id" element={<RequireAuth><WritePostPage /></RequireAuth>} />
           <Route path="/admin/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
+          <Route path="/admin/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
         </Routes>
       </div>
     </AnimatePresence>
