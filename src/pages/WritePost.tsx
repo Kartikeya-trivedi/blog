@@ -572,6 +572,7 @@ export default function WritePostPage() {
                   <ToolbarButton icon={<Share2 size={14} />} onClick={() => insertText('```mermaid\ngraph TD;\n  A-->B;\n```', '')} title="Mermaid Diagram" />
                   <ToolbarButton icon={<TableOfContents size={14} />} onClick={insertToc} title="Insert Table of Contents" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
+                  <ToolbarButton icon={<Link2 size={14} />} onClick={() => insertText('[', '](url)')} title="Insert Link" />
                   <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => fileInputRef.current?.click()} title="Insert Image" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
                   <ToolbarButton icon={<Wand2 size={14} className="text-purple-500" />} onClick={() => setShowAi(!showAi)} title="Gemini Magic Assistant" />

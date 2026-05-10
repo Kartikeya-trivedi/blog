@@ -194,6 +194,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ),
           th: ({ children }) => <th className="border border-outline-variant bg-surface-container px-4 py-3 text-left font-bold uppercase tracking-wider">{children}</th>,
           td: ({ children }) => <td className="border border-outline-variant px-4 py-3">{children}</td>,
+          a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
         }}
       >
         {content}
