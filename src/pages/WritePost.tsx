@@ -3,17 +3,29 @@ import { motion } from 'motion/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
 import { cn } from '@/src/lib/utils';
-import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2, Type } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2, Type, TableOfContents, Upload, Link2, X, Wand2, Maximize, Minimize, History, BarChart2, Clock, Check, RefreshCw } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
 import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
 
 export default function WritePostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
+  const [coverImageMode, setCoverImageMode] = useState<'url' | 'upload'>('url');
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('edit');
   const [stats, setStats] = useState({ words: 0, time: 0 });
   const [isSaving, setIsSaving] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
+  const [showAi, setShowAi] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [revisions, setRevisions] = useState<BlogPost[]>([]);
+  const [showRevisions, setShowRevisions] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
   
   const [post, setPost] = useState<BlogPost>({
     id: id || '', // Supabase will generate if empty
@@ -41,10 +53,98 @@ export default function WritePostPage() {
   }, [id]);
 
   useEffect(() => {
+    const savedRevisions = localStorage.getItem('blog_revisions');
+    if (savedRevisions) {
+      try {
+        setRevisions(JSON.parse(savedRevisions));
+      } catch(e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (post.title || post.content) {
+        setRevisions(prev => {
+          // don't save if it's the exact same as the last revision
+          if (prev.length > 0 && prev[0].content === post.content && prev[0].title === post.title) return prev;
+          const newRevisions = [{...post, _savedAt: new Date().toLocaleTimeString()}, ...prev].slice(0, 10);
+          localStorage.setItem('blog_revisions', JSON.stringify(newRevisions));
+          return newRevisions;
+        });
+      }
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [post]);
+
+  useEffect(() => {
     const words = post.content.trim() ? post.content.trim().split(/\s+/).length : 0;
     const time = Math.max(1, Math.ceil(words / 200)); 
     setStats({ words, time });
   }, [post.content]);
+
+  const restoreRevision = (rev: any) => {
+    if (confirm('Restore this revision? Your current draft will be overwritten.')) {
+      setPost(rev);
+      setShowRevisions(false);
+    }
+  };
+
+  const handleAiAction = async (actionType: 'grammar' | 'rephrase' | 'custom') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selection = post.content.substring(start, end);
+    
+    if (!selection && actionType !== 'custom') {
+      alert("Please select some text first to use AI editing.");
+      return;
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      alert("GEMINI_API_KEY is not defined in environment variables.");
+      return;
+    }
+
+    setIsAiLoading(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      let prompt = '';
+      if (actionType === 'grammar') {
+        prompt = `Fix any grammatical errors in the following text, return ONLY the corrected text with no extra commentary:\n\n${selection}`;
+      } else if (actionType === 'rephrase') {
+        prompt = `Rephrase the following text to flow better and sound more professional. Return ONLY the new text with no extra commentary:\n\n${selection}`;
+      } else {
+        prompt = `${aiPrompt}\n\n${selection ? 'Text: ' + selection : ''}`;
+      }
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      const resultText = response.text || '';
+      
+      if (resultText) {
+        if (selection) {
+          setPost(prev => ({
+            ...prev,
+            content: prev.content.substring(0, start) + resultText + prev.content.substring(end)
+          }));
+        } else {
+          insertText(resultText, '');
+        }
+      }
+      setShowAi(false);
+      setAiPrompt('');
+    } catch (e) {
+      alert("AI Generation failed: " + (e as Error).message);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   // Note: Local upload will still fail on Vercel unless using Vercel Blob. 
   // We recommend using external URLs for images for now or Vercel Blob later.
@@ -79,6 +179,35 @@ export default function WritePostPage() {
     if (file) {
       uploadImage(file);
     }
+  };
+
+  const handleCoverImageUpload = async (file: File) => {
+    setIsCoverUploading(true);
+    try {
+      const url = await blogService.uploadImage(file);
+      setPost(prev => ({ ...prev, image: url }));
+    } catch (err) {
+      alert('Cover image upload failed. Check your Supabase storage bucket.');
+    } finally {
+      setIsCoverUploading(false);
+    }
+  };
+
+  const insertToc = () => {
+    const headings = post.content.match(/^#{1,3}\s+.+$/gm) || [];
+    if (headings.length === 0) {
+      alert('No headings found in your content yet. Add some # headings first.');
+      return;
+    }
+    const tocLines = headings.map(h => {
+      const level = (h.match(/^#+/) || [''])[0].length;
+      const text = h.replace(/^#+\s+/, '');
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      const indent = '  '.repeat(level - 1);
+      return `${indent}- [${text}](#${id})`;
+    });
+    const tocBlock = `## Table of Contents\n\n${tocLines.join('\n')}\n\n`;
+    insertText(tocBlock, '');
   };
 
   const insertText = (before: string, after: string = '') => {
@@ -158,86 +287,80 @@ export default function WritePostPage() {
       className="flex flex-col min-h-screen bg-background"
     >
       {/* Stats Bar */}
-      <div className="bg-surface-container border-b border-outline-variant px-margin-page py-2 flex justify-between items-center text-[10px] text-secondary font-mono uppercase tracking-widest sticky top-0 z-50">
+      <div className={cn("bg-surface-container border-b border-outline-variant px-margin-page py-2 flex justify-between items-center text-[10px] text-secondary font-mono uppercase tracking-widest sticky top-0 z-50 transition-all", zenMode && "opacity-0 pointer-events-none absolute")}>
         <div className="flex gap-6">
           <span>Words: {stats.words}</span>
           <span>EST. reading time: {stats.time} MIN</span>
+          <button onClick={() => setShowRevisions(true)} className="flex items-center gap-1 hover:text-tertiary transition-colors">
+            <History size={12} /> {revisions.length} Revisions Saved
+          </button>
         </div>
         <div className="flex gap-4 items-center">
+          <button onClick={() => setShowSeo(!showSeo)} className="flex items-center gap-1 hover:text-tertiary transition-colors">
+            <BarChart2 size={12} /> SEO Score
+          </button>
+          <span className="w-[1px] h-3 bg-outline-variant"></span>
           <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> CLOUD CONNECTED</span>
           <span className="w-[1px] h-3 bg-outline-variant"></span>
           <span>{post.status}</span>
         </div>
       </div>
 
-      <div className={cn(
-        "mx-auto px-margin-page py-12 transition-all duration-500 w-full",
-        viewMode === 'split' ? "max-w-[1400px]" : "max-w-[1000px]"
-      )}>
-      <header className="flex justify-between items-center mb-12">
-        <button 
-          onClick={() => navigate('/admin')}
-          className="flex items-center gap-2 text-label-caps text-secondary hover:text-tertiary transition-colors"
-        >
-          <ArrowLeft size={16} /> Back to Dashboard
-        </button>
-        <div className="flex gap-4">
-          <div className="flex border border-outline-variant rounded p-0.5 mr-4">
+      <div className="flex relative">
+        <div className={cn(
+          "mx-auto px-margin-page transition-all duration-500 w-full",
+          viewMode === 'split' ? "max-w-[1400px]" : "max-w-[1000px]",
+          zenMode ? "py-4 max-w-[800px]" : "py-12",
+          showSeo ? "mr-[320px]" : ""
+        )}>
+        
+        {!zenMode && (
+          <header className="flex justify-between items-center mb-12">
             <button 
-              onClick={() => setViewMode('edit')}
-              className={cn(
-                "px-4 py-1.5 text-label-caps text-[10px] transition-all",
-                viewMode === 'edit' ? "bg-tertiary text-white" : "hover:bg-surface-container"
-              )}
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-2 text-label-caps text-secondary hover:text-tertiary transition-colors"
             >
-              Edit
+              <ArrowLeft size={16} /> Back to Dashboard
             </button>
-            <button 
-              onClick={() => setViewMode('split')}
-              className={cn(
-                "px-4 py-1.5 text-label-caps text-[10px] transition-all",
-                viewMode === 'split' ? "bg-tertiary text-white" : "hover:bg-surface-container"
-              )}
-            >
-              Split
-            </button>
-            <button 
-              onClick={() => setViewMode('preview')}
-              className={cn(
-                "px-4 py-1.5 text-label-caps text-[10px] transition-all",
-                viewMode === 'preview' ? "bg-tertiary text-white" : "hover:bg-surface-container"
-              )}
-            >
-              Preview
-            </button>
-          </div>
-          <button 
-            disabled={isSaving}
-            onClick={() => handleSave('DRAFT')}
-            className="px-6 py-2 border border-outline-variant text-label-caps hover:bg-surface-container transition-all disabled:opacity-50"
-          >
-            {isSaving ? 'Saving...' : 'Save Draft'}
-          </button>
-          <button 
-            disabled={isSaving}
-            onClick={() => handleSave('PUBLISHED')}
-            className="px-6 py-2 bg-tertiary text-white text-label-caps flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
-          >
-            <Save size={16} /> {isSaving ? 'Publishing...' : 'Publish Post'}
-          </button>
-        </div>
-      </header>
+            <div className="flex gap-4 items-center">
+              <div className="flex border border-outline-variant rounded p-0.5 mr-2">
+                <button onClick={() => setViewMode('edit')} className={cn("px-4 py-1.5 text-label-caps text-[10px] transition-all", viewMode === 'edit' ? "bg-tertiary text-white" : "hover:bg-surface-container")}>Edit</button>
+                <button onClick={() => setViewMode('split')} className={cn("px-4 py-1.5 text-label-caps text-[10px] transition-all", viewMode === 'split' ? "bg-tertiary text-white" : "hover:bg-surface-container")}>Split</button>
+                <button onClick={() => setViewMode('preview')} className={cn("px-4 py-1.5 text-label-caps text-[10px] transition-all", viewMode === 'preview' ? "bg-tertiary text-white" : "hover:bg-surface-container")}>Preview</button>
+              </div>
+              <div className="flex items-center border border-outline-variant rounded p-0.5 mr-4">
+                <input type="datetime-local" className="bg-transparent text-[10px] uppercase font-mono px-2 outline-none text-secondary" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+                <button 
+                  disabled={isSaving || !scheduleDate}
+                  onClick={() => handleSave('SCHEDULED' as any)}
+                  className="px-4 py-1.5 bg-surface-container hover:bg-outline-variant transition-colors text-label-caps text-[10px] flex items-center gap-1 disabled:opacity-30 border-l border-outline-variant"
+                  title="Schedule Post"
+                >
+                  <Clock size={12} /> Schedule
+                </button>
+              </div>
+              <button disabled={isSaving} onClick={() => handleSave('DRAFT')} className="px-6 py-2 border border-outline-variant text-label-caps hover:bg-surface-container transition-all disabled:opacity-50">
+                {isSaving ? 'Saving...' : 'Save Draft'}
+              </button>
+              <button disabled={isSaving} onClick={() => handleSave('PUBLISHED')} className="px-6 py-2 bg-tertiary text-white text-label-caps flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50">
+                <Save size={16} /> {isSaving ? 'Publishing...' : 'Publish Post'}
+              </button>
+            </div>
+          </header>
+        )}
 
       <div className="space-y-8">
-        <div>
-          <input 
-            type="text"
-            placeholder="ARTICLE TITLE"
-            className="w-full text-display text-4xl font-serif bg-transparent border-b border-outline-variant py-4 focus:outline-none focus:border-tertiary transition-all"
-            value={post.title}
-            onChange={(e) => setPost({ ...post, title: e.target.value })}
-          />
-        </div>
+        {!zenMode && (
+          <>
+            <div>
+              <input 
+                type="text"
+                placeholder="ARTICLE TITLE"
+                className="w-full text-display text-4xl font-serif bg-transparent border-b border-outline-variant py-4 focus:outline-none focus:border-tertiary transition-all"
+                value={post.title}
+                onChange={(e) => setPost({ ...post, title: e.target.value })}
+              />
+            </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="flex flex-col gap-2">
@@ -257,14 +380,65 @@ export default function WritePostPage() {
             </select>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-label-caps text-secondary text-[10px]">COVER IMAGE URL</label>
-            <input 
-              type="text"
-              placeholder="https://images.unsplash.com/..."
-              className="bg-surface-container border-0 px-4 py-3 text-body-md font-mono text-[10px]"
-              value={post.image || ''}
-              onChange={(e) => setPost({ ...post, image: e.target.value })}
-            />
+            <div className="flex justify-between items-center">
+              <label className="text-label-caps text-secondary text-[10px]">COVER IMAGE</label>
+              <div className="flex gap-1 border border-outline-variant rounded overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setCoverImageMode('url')}
+                  className={cn('px-3 py-1 text-[9px] font-mono uppercase tracking-widest transition-all flex items-center gap-1', coverImageMode === 'url' ? 'bg-tertiary text-white' : 'hover:bg-surface-container')}
+                ><Link2 size={10} /> URL</button>
+                <button
+                  type="button"
+                  onClick={() => setCoverImageMode('upload')}
+                  className={cn('px-3 py-1 text-[9px] font-mono uppercase tracking-widest transition-all flex items-center gap-1', coverImageMode === 'upload' ? 'bg-tertiary text-white' : 'hover:bg-surface-container')}
+                ><Upload size={10} /> Upload</button>
+              </div>
+            </div>
+
+            {coverImageMode === 'url' ? (
+              <input
+                type="text"
+                placeholder="https://images.unsplash.com/..."
+                className="bg-surface-container border-0 px-4 py-3 text-body-md font-mono text-[10px]"
+                value={post.image || ''}
+                onChange={(e) => setPost({ ...post, image: e.target.value })}
+              />
+            ) : (
+              <div>
+                <input
+                  type="file"
+                  ref={coverImageInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverImageUpload(f); }}
+                />
+                <div
+                  onClick={() => !isCoverUploading && coverImageInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) handleCoverImageUpload(f); }}
+                  className={cn(
+                    'border-2 border-dashed border-outline-variant bg-surface-container px-4 py-5 text-center cursor-pointer hover:border-tertiary transition-all',
+                    isCoverUploading && 'opacity-50 cursor-wait'
+                  )}
+                >
+                  {isCoverUploading ? (
+                    <span className="text-[10px] font-mono text-secondary animate-pulse">UPLOADING...</span>
+                  ) : post.image ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <img src={post.image} className="h-10 w-16 object-cover rounded" alt="cover" />
+                      <span className="text-[10px] font-mono text-secondary truncate flex-1 text-left">Uploaded ✓</span>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setPost(p => ({...p, image: ''})); }} className="text-secondary hover:text-red-500"><X size={12}/></button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <Upload size={18} className="text-secondary" />
+                      <span className="text-[10px] font-mono text-secondary">CLICK OR DRAG IMAGE HERE</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -344,33 +518,38 @@ export default function WritePostPage() {
           />
         </div>
 
-        <div className="pt-8">
-          <div className="flex justify-between items-center mb-4">
-            <label className="text-label-caps text-secondary text-[10px] block uppercase">
-              {viewMode === 'split' ? 'Editor | Live Preview' : viewMode === 'preview' ? 'Full Preview' : 'Markdown Content'}
-            </label>
-            <div className="group relative">
-              <Info size={14} className="text-tertiary cursor-help" />
-              <div className="absolute right-0 bottom-full mb-2 w-64 bg-surface-container-highest p-4 text-[10px] text-tertiary border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
-                <p className="font-bold mb-2">TECHNICAL MARKDOWN SUPPORT:</p>
-                <ul className="space-y-1 list-disc pl-3">
-                  <li>Math: Use $...$ for inline or $$...$$ for block LaTeX.</li>
-                  <li>Diagrams: Use ```mermaid code blocks.</li>
-                  <li>Images: Paste, drop, or upload to Cloud Storage.</li>
-                  <li>Captions: Use &lt;div class="caption"&gt;Text&lt;/div&gt;</li>
-                </ul>
+          </>
+        )}
+
+        <div className={cn("pt-8 transition-all", zenMode ? "pt-0" : "")}>
+          {!zenMode && (
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-label-caps text-secondary text-[10px] block uppercase">
+                {viewMode === 'split' ? 'Editor | Live Preview' : viewMode === 'preview' ? 'Full Preview' : 'Markdown Content'}
+              </label>
+              <div className="group relative">
+                <Info size={14} className="text-tertiary cursor-help" />
+                <div className="absolute right-0 bottom-full mb-2 w-64 bg-surface-container-highest p-4 text-[10px] text-tertiary border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+                  <p className="font-bold mb-2">TECHNICAL MARKDOWN SUPPORT:</p>
+                  <ul className="space-y-1 list-disc pl-3">
+                    <li>Math: Use $...$ for inline or $$...$$ for block LaTeX.</li>
+                    <li>Diagrams: Use ```mermaid code blocks.</li>
+                    <li>Images: Paste, drop, or upload to Cloud Storage.</li>
+                    <li>Captions: Use &lt;div class="caption"&gt;Text&lt;/div&gt;</li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className={cn(
             "grid gap-8 transition-all duration-500",
             viewMode === 'split' ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
           )}>
             {(viewMode === 'edit' || viewMode === 'split') && (
-              <div className="flex flex-col border border-outline-variant bg-surface-container overflow-hidden">
+              <div className={cn("flex flex-col border border-outline-variant bg-surface-container overflow-hidden transition-all duration-300", zenMode && "fixed inset-0 z-[100] m-0 border-0 rounded-none bg-background")}>
                 {/* Toolbar */}
-                <div className="flex flex-wrap gap-1 p-2 bg-surface-container border-b border-outline-variant">
+                <div className="flex flex-wrap gap-1 p-2 bg-surface-container border-b border-outline-variant items-center sticky top-0 z-10 shadow-sm">
                   <ToolbarButton icon={<Bold size={14} />} onClick={() => insertText('**', '**')} title="Bold" />
                   <ToolbarButton icon={<Italic size={14} />} onClick={() => insertText('*', '*')} title="Italic" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
@@ -391,8 +570,14 @@ export default function WritePostPage() {
                   <ToolbarButton icon={<Sigma size={14} />} onClick={() => insertText('$', '$')} title="Inline Math" />
                   <ToolbarButton icon={<Type size={14} />} onClick={() => insertText('<div class="caption">', '</div>')} title="Add Caption" />
                   <ToolbarButton icon={<Share2 size={14} />} onClick={() => insertText('```mermaid\ngraph TD;\n  A-->B;\n```', '')} title="Mermaid Diagram" />
+                  <ToolbarButton icon={<TableOfContents size={14} />} onClick={insertToc} title="Insert Table of Contents" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
                   <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => fileInputRef.current?.click()} title="Insert Image" />
+                  <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
+                  <ToolbarButton icon={<Wand2 size={14} className="text-purple-500" />} onClick={() => setShowAi(!showAi)} title="Gemini Magic Assistant" />
+                  <div className="flex-1" />
+                  <ToolbarButton icon={zenMode ? <Minimize size={14} /> : <Maximize size={14} />} onClick={() => setZenMode(!zenMode)} title="Toggle Zen Mode" />
+
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -400,6 +585,31 @@ export default function WritePostPage() {
                     accept="image/*" 
                     onChange={handleImageUpload} 
                   />
+                  
+                  {/* AI Assistant Popover */}
+                  {showAi && (
+                    <div className="absolute top-12 right-12 w-80 bg-white border border-outline-variant shadow-xl z-50 p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-outline-variant pb-2">
+                        <span className="text-[10px] font-mono text-tertiary flex items-center gap-1"><Wand2 size={12}/> AI ASSISTANT</span>
+                        <button onClick={() => setShowAi(false)}><X size={14} className="text-secondary"/></button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button disabled={isAiLoading} onClick={() => handleAiAction('grammar')} className="text-[10px] bg-surface-container hover:bg-outline-variant p-2 text-center rounded disabled:opacity-50">Fix Grammar</button>
+                        <button disabled={isAiLoading} onClick={() => handleAiAction('rephrase')} className="text-[10px] bg-surface-container hover:bg-outline-variant p-2 text-center rounded disabled:opacity-50">Rephrase</button>
+                      </div>
+                      <div className="flex flex-col gap-2 mt-2">
+                        <textarea 
+                          placeholder="Or type custom prompt..."
+                          className="w-full text-xs p-2 border border-outline-variant bg-surface-container focus:outline-none min-h-[60px]"
+                          value={aiPrompt}
+                          onChange={e => setAiPrompt(e.target.value)}
+                        />
+                        <button disabled={isAiLoading} onClick={() => handleAiAction('custom')} className="bg-tertiary text-white text-[10px] p-2 hover:opacity-90 transition-all flex justify-center items-center gap-1">
+                          {isAiLoading ? <RefreshCw size={12} className="animate-spin" /> : 'Generate'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="relative group/editor">
@@ -407,8 +617,9 @@ export default function WritePostPage() {
                     ref={textareaRef}
                     placeholder="Begin your manifesto..."
                     className={cn(
-                      "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-relaxed font-mono text-sm focus:outline-none transition-all",
-                      viewMode === 'split' ? "h-full" : ""
+                      "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-relaxed font-mono text-sm focus:outline-none transition-all resize-y",
+                      viewMode === 'split' ? "h-full" : "",
+                      zenMode ? "max-w-[800px] mx-auto text-base p-16 h-screen" : ""
                     )}
                     value={post.content}
                     onChange={(e) => setPost({ ...post, content: e.target.value })}
@@ -430,6 +641,81 @@ export default function WritePostPage() {
             )}
         </div>
       </div>
+      </div>
+      
+      {/* SEO Sidebar */}
+      {showSeo && (
+        <motion.div 
+          initial={{ x: 300, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="fixed right-0 top-0 bottom-0 w-[320px] bg-surface-container border-l border-outline-variant p-6 overflow-y-auto z-40 pt-20"
+        >
+          <div className="flex justify-between items-center mb-8 pb-4 border-b border-outline-variant">
+            <h3 className="text-label-caps flex items-center gap-2"><BarChart2 size={16}/> SEO Analysis</h3>
+            <button onClick={() => setShowSeo(false)} className="text-secondary hover:text-tertiary"><X size={16}/></button>
+          </div>
+
+          <div className="space-y-8">
+            <div className="bg-white p-4 border border-outline-variant rounded">
+               <h4 className="text-[10px] font-mono text-secondary mb-2">READABILITY SCORE</h4>
+               <div className="flex items-end gap-2">
+                 <span className="text-2xl text-tertiary font-serif">{stats.words < 50 ? 'N/A' : (stats.words < 300 ? 'Easy' : 'Moderate')}</span>
+                 <span className="text-[10px] text-secondary mb-1">({stats.time} min read)</span>
+               </div>
+            </div>
+            
+            <div className="bg-white p-4 border border-outline-variant rounded">
+               <h4 className="text-[10px] font-mono text-secondary mb-2">GOOGLE SNIPPET PREVIEW</h4>
+               <div className="space-y-1">
+                 <div className="text-[12px] text-[#1a0dab] truncate hover:underline cursor-pointer">
+                   {post.title || 'Untitled Article'}
+                 </div>
+                 <div className="text-[11px] text-[#006621] truncate flex items-center gap-1">
+                   {post.canonicalUrl || 'https://yoursite.com/blog/...' }
+                 </div>
+                 <div className="text-[11px] text-[#545454] line-clamp-2 leading-relaxed">
+                   {post.date} - {post.excerpt || post.content.replace(/[#*`_]/g, '').slice(0, 150) || 'Write an excerpt or content to see snippet preview...'}
+                 </div>
+               </div>
+            </div>
+
+            <div className="bg-white p-4 border border-outline-variant rounded">
+               <h4 className="text-[10px] font-mono text-secondary mb-2">TOP KEYWORDS</h4>
+               <div className="flex flex-wrap gap-2">
+                 {post.content.split(/\s+/).filter(w => w.length > 5).slice(0, 5).map((w, i) => (
+                   <span key={i} className="text-[10px] bg-surface-container px-2 py-1 text-secondary uppercase truncate max-w-full">
+                     {w.replace(/[^\w]/g, '')}
+                   </span>
+                 ))}
+               </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Revisions Modal */}
+      {showRevisions && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
+          <div className="bg-white w-[500px] max-h-[80vh] overflow-y-auto p-8 relative shadow-2xl">
+            <button onClick={() => setShowRevisions(false)} className="absolute top-6 right-6 text-secondary hover:text-tertiary"><X size={16}/></button>
+            <h2 className="text-headline-sm mb-6 flex items-center gap-2"><History size={20}/> Local Revisions</h2>
+            <p className="text-body-sm text-secondary mb-6 italic">Auto-saves from this browser session. Restoring will overwrite current draft.</p>
+            <div className="space-y-4">
+              {revisions.length === 0 ? <p className="text-sm">No revisions saved yet.</p> : null}
+              {revisions.map((rev, i) => (
+                <div key={i} className="border border-outline-variant p-4 hover:border-tertiary transition-all flex justify-between items-center group cursor-pointer" onClick={() => restoreRevision(rev)}>
+                  <div>
+                    <div className="font-bold text-tertiary">{rev.title || 'Untitled'}</div>
+                    <div className="text-[10px] font-mono text-secondary mt-1">Saved at {(rev as any)._savedAt || 'Unknown time'}</div>
+                  </div>
+                  <button className="text-[10px] bg-tertiary text-white px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity">Restore</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   </div>
 </motion.div>
