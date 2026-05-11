@@ -160,12 +160,12 @@ export default function ArticlePage() {
         </div>
 
         {post.image && (
-          <div className="w-full aspect-[21/9] bg-surface-container overflow-hidden mb-16">
+          <div className="w-full aspect-[21/9] overflow-hidden mb-16">
             <img 
               alt={post.title} 
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover transition-all duration-1000" 
+              className="w-full h-full object-cover" 
               src={post.image} 
             />
           </div>

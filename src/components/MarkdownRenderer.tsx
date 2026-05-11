@@ -198,14 +198,12 @@ export function MarkdownRenderer({ content }: { content: string }) {
           a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
           img: ({ src, alt, title }) => (
             <figure className="my-12">
-              <div className="bg-surface-container overflow-hidden rounded-lg border border-outline-variant">
-                <img 
-                  src={src} 
-                  alt={alt} 
-                  className="w-full h-auto grayscale hover:grayscale-0 transition-all duration-700" 
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <img 
+                src={src} 
+                alt={alt} 
+                className="w-full h-auto block" 
+                referrerPolicy="no-referrer"
+              />
               {title && (
                 <figcaption className="mt-4 text-center">
                   <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.2em] opacity-60">
