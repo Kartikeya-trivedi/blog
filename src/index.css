@@ -56,11 +56,22 @@
 
 @media (max-width: 768px) {
   :root {
-    --spacing-margin-page: 24px;
+    --spacing-margin-page: 16px;
     --spacing-section-gap: 64px;
   }
   .text-display {
-    @apply text-[48px];
+    @apply text-[40px];
+  }
+
+  /* Prevent horizontal blowout */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Code blocks scroll instead of blowing out */
+  .markdown-content pre {
+    overflow-x: auto;
+    max-width: 100%;
   }
 }
 
@@ -95,4 +106,20 @@
 
 .markdown-content table {
   @apply shadow-sm;
+}
+
+/* Zen mode article — slightly larger, looser type for deep reading */
+.zen-article-content p {
+  @apply text-[17px] sm:text-[19px] leading-[1.85];
+}
+
+.zen-article-content h1,
+.zen-article-content h2,
+.zen-article-content h3 {
+  @apply mt-12 mb-6;
+}
+
+/* Global overflow safety net */
+* {
+  min-width: 0;
 }
