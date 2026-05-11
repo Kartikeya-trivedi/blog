@@ -10,7 +10,7 @@ export default function PortfolioPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max mx-auto px-margin-page"
+      className="max-w-container-max px-margin-page"
     >
       {/* Hero Section */}
       <section className="mt-24 mb-section-gap grid grid-cols-12 gap-8 items-end">
@@ -107,9 +107,9 @@ export default function PortfolioPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="mb-section-gap py-32 bg-background border border-outline-variant text-center">
+      <section className="mb-section-gap py-32 bg-background border border-outline-variant text-left px-12">
         <h2 className="text-display italic mb-12 text-tertiary"> लखनऊ to the world.</h2>
-        <div className="flex justify-center gap-8">
+        <div className="flex justify-start gap-8">
           <a href="mailto:hello@kartikeya.build" className="border-b border-tertiary pb-2 text-label-caps hover:opacity-70 transition-opacity">hello@kartikeya.build</a>
           <a href="#" className="border-b border-tertiary pb-2 text-label-caps hover:opacity-70 transition-opacity">LINKEDIN</a>
         </div>

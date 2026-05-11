@@ -6,9 +6,9 @@ export default function AboutPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-[800px] mx-auto px-margin-page py-24"
+      className="max-w-[800px] px-margin-page py-24"
     >
-      <section className="mb-24 text-center">
+      <section className="mb-24 text-left">
         <span className="text-label-caps text-secondary mb-6 block">THE EDITORIAL</span>
         <h1 className="text-display mb-12">Researcher, Builder, and someone who stays up too late watching race replays.</h1>
         <p className="text-body-lg text-secondary italic font-serif">
@@ -42,8 +42,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="text-center py-24 border-y border-outline-variant bg-surface-container/30">
-        <h2 className="text-display italic font-serif mb-8 max-w-lg mx-auto"> लखनऊ से संसार तक.</h2>
+      <section className="text-left py-24 border-y border-outline-variant bg-surface-container/30">
+        <h2 className="text-display italic font-serif mb-8 max-w-lg"> लखनऊ से संसार तक.</h2>
         <p className="text-label-caps text-secondary tracking-[0.2em]">CURATED BY KARTIKEYA TRIVEDI</p>
       </section>
     </motion.div>

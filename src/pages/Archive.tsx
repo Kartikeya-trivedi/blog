@@ -9,7 +9,7 @@ export default function ArchivePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max mx-auto px-margin-page py-24"
+      className="max-w-container-max px-margin-page py-24"
     >
       <header className="mb-24 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
@@ -50,13 +50,13 @@ export default function ArchivePage() {
         ))}
       </div>
 
-      <section className="mt-32 p-16 bg-surface-container text-center">
+      <section className="mt-32 p-16 bg-surface-container text-left">
         <h3 className="text-headline-md mb-8">Looking for something specific?</h3>
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md">
           <input 
             type="text" 
             placeholder="SEARCH ARCHIVE..." 
-            className="w-full bg-transparent border-b border-tertiary px-4 py-3 text-label-caps focus:outline-none focus:border-secondary transition-all text-center"
+            className="w-full bg-transparent border-b border-tertiary px-4 py-3 text-label-caps focus:outline-none focus:border-secondary transition-all text-left"
           />
         </div>
       </section>

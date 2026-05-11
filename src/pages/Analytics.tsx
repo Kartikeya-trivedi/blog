@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="max-w-container-max mx-auto px-margin-page py-12"
+        className="max-w-container-max px-margin-page py-12"
       >
         <AdminLayout>
           <div className="flex items-center justify-center min-h-[400px]">
@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="max-w-container-max mx-auto px-margin-page py-12"
+        className="max-w-container-max px-margin-page py-12"
       >
         <AdminLayout>
           <div className="text-center py-20 text-secondary">Failed to load analytics data.</div>
@@ -136,7 +136,7 @@ export default function AnalyticsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max mx-auto px-margin-page py-12"
+      className="max-w-container-max px-margin-page py-12"
     >
       <AdminLayout>
         {/* Header */}

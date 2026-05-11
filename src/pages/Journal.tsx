@@ -48,7 +48,7 @@ export default function JournalPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max mx-auto px-margin-page"
+      className="max-w-container-max px-margin-page"
     >
       {/* Hero Featured Post */}
       <section className="mt-16 mb-section-gap">
@@ -69,10 +69,10 @@ export default function JournalPage() {
               />
             </motion.div>
           </div>
-          <div className="col-span-12 md:col-start-3 md:col-span-8 text-center">
+          <div className="col-span-12 md:col-span-10 text-left">
 
             <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
-            <p className="text-body-lg text-secondary mb-10 max-w-2xl mx-auto italic font-serif">
+            <p className="text-body-lg text-secondary mb-10 max-w-2xl italic font-serif">
               Exploring the downstream consequences of decisions in software, machine learning, and the pursuit of a meaningful life.
             </p>
             <Link 
@@ -145,12 +145,12 @@ export default function JournalPage() {
           <div className="space-y-0">
             <AnimatePresence mode="popLayout">
               {loading ? (
-                <div className="py-24 text-center text-label-caps animate-pulse">RECOVERING DATA FROM CLOUD ARCHIVE...</div>
+                <div className="py-24 text-left text-label-caps animate-pulse">RECOVERING DATA FROM CLOUD ARCHIVE...</div>
               ) : filteredPosts.length === 0 ? (
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="py-24 text-center text-body-lg text-secondary italic border-b border-outline-variant"
+                  className="py-24 text-left text-body-lg text-secondary italic border-b border-outline-variant"
                 >
                   No match found for your inquiry.
                 </motion.p>

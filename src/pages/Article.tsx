@@ -92,11 +92,11 @@ export default function ArticlePage() {
     }
   };
 
-  if (loading) return <div className="py-48 text-center text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
+  if (loading) return <div className="py-48 text-left text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
 
   if (!post) {
     return (
-      <div className="max-w-container-max mx-auto px-margin-page py-24 text-center">
+      <div className="max-w-container-max px-margin-page py-24 text-left">
         <h1 className="text-display mb-8">Post not found.</h1>
         <Link to="/" className="text-label-caps border border-tertiary px-8 py-3 hover:bg-tertiary hover:text-white transition-all">
           Return to Journal
@@ -128,7 +128,7 @@ export default function ArticlePage() {
           >
             {/* Zen top bar */}
             <div className="sticky top-0 bg-background/90 backdrop-blur-sm border-b border-outline-variant z-10">
-              <div className="max-w-[1200px] mx-auto px-6 sm:px-12 py-3 flex items-center justify-between">
+              <div className="max-w-[1200px] px-6 sm:px-12 py-3 flex items-center justify-between">
                 <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50">{post.category} — {post.title}</span>
                 <div className="flex items-center gap-4">
                   <div className="hidden sm:flex items-center gap-1">
@@ -148,7 +148,7 @@ export default function ArticlePage() {
             </div>
 
             {/* Zen body — wide on desktop, narrow on mobile */}
-            <div className="max-w-[1200px] mx-auto px-6 sm:px-12 py-10 sm:py-16 lg:py-20 flex gap-16">
+            <div className="max-w-[1200px] px-6 sm:px-12 py-10 sm:py-16 lg:py-20 flex gap-16">
 
               {/* Main article — full width mobile, ~70% desktop */}
               <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export default function ArticlePage() {
       </AnimatePresence>
 
       {/* Article header section */}
-      <section className="max-w-container-max mx-auto px-margin-page pt-8 sm:pt-16">
+      <section className="max-w-container-max px-margin-page pt-8 sm:pt-16">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 mb-6 sm:mb-8 text-[10px] text-secondary font-mono tracking-widest uppercase overflow-hidden">
           <Link to="/" className="hover:text-tertiary transition-colors shrink-0">Journal</Link>
@@ -297,7 +297,7 @@ export default function ArticlePage() {
       </section>
 
       {/* Article body + TOC */}
-      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
+      <div className="max-w-container-max px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
         {/* TOC Sidebar — desktop only */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
           <div className="border-l border-outline-variant pl-8 py-2">
@@ -357,7 +357,7 @@ export default function ArticlePage() {
 
       {/* Related posts */}
       <section className="bg-surface-container-low py-section-gap border-t border-outline-variant">
-        <div className="max-w-container-max mx-auto px-margin-page">
+        <div className="max-w-container-max px-margin-page">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-10 sm:mb-16">
             <h3 className="font-serif text-[32px] sm:text-[48px] leading-[1.2] font-normal text-tertiary">Related Discourse</h3>
             <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all text-xs self-start sm:self-auto">VIEW FULL ARCHIVE</Link>
@@ -405,7 +405,7 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
   };
 
   return (
-    <div className="max-w-[720px] mx-auto px-margin-page">
+    <div className="max-w-[720px] px-margin-page">
       <div className="mb-16 sm:mb-24">
         <span className="text-label-caps text-secondary mb-4 block text-[10px]">PARTICIPATION</span>
         <h2 className="font-serif text-[36px] sm:text-[48px] leading-[1.2] font-normal mb-10 sm:mb-12">Public Responses.</h2>

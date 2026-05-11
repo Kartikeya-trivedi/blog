@@ -22,7 +22,7 @@
 
 @layer base {
   body {
-    @apply bg-background text-on-surface font-sans antialiased;
+    @apply bg-background text-on-surface font-sans antialiased text-left;
   }
 }
 
