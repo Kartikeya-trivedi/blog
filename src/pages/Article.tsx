@@ -22,20 +22,27 @@ export default function ArticlePage() {
   useEffect(() => {
     const fetchPost = async () => {
       if (slug) {
-        setLoading(true);
-        const data = await blogService.getPostBySlug(slug);
-        if (data) {
-          setPost(data);
-          const all = (await blogService.getPosts()).filter(p => p.id !== data.id && p.status === 'PUBLISHED');
-          const sameCategory = all.filter(p => p.category === data.category);
-          setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
-          
-          const postComments = await blogService.getComments(id);
-          setComments(postComments);
+        try {
+          setLoading(true);
+          const data = await blogService.getPostBySlug(slug);
+          if (data) {
+            setPost(data);
+            const all = (await blogService.getPosts()).filter(p => p.id !== data.id && p.status === 'PUBLISHED');
+            const sameCategory = all.filter(p => p.category === data.category);
+            setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
+            
+            const postComments = await blogService.getComments(data.id);
+            setComments(postComments);
+          }
+        } catch (error) {
+          console.error('Error fetching post:', error);
+        } finally {
+          setLoading(false);
+          window.scrollTo(0, 0);
         }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
-      window.scrollTo(0, 0);
     };
     fetchPost();
   }, [slug]);

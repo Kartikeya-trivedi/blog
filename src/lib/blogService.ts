@@ -98,6 +98,10 @@ export const blogService = {
       .single();
     
     if (error) {
+      // 42703 is the Postgres error code for "column does not exist"
+      if (error.code === '42703') {
+        console.warn('CRITICAL: The "slug" column is missing from your Supabase "blogs" table. Articles will fail to load until you add this column. Run: ALTER TABLE blogs ADD COLUMN slug TEXT UNIQUE;');
+      }
       // If not found by slug, try by ID as fallback for old links
       return blogService.getPostById(slug);
     }
