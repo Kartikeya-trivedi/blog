@@ -299,8 +299,8 @@ export default function ArticlePage() {
         </section>
       )}
 
-      {/* Article body + TOC */}
-      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
+      {/* Article body + TOC — simpler layout on mobile to prevent truncation */}
+      <div className="max-w-container-max mx-auto px-margin-page flex flex-col lg:grid lg:grid-cols-12 lg:gap-12 relative">
         {/* TOC Sidebar — desktop only */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
           <div className="border-l border-outline-variant pl-8 py-2">
@@ -347,10 +347,10 @@ export default function ArticlePage() {
           </div>
         </aside>
 
-        {/* Article content */}
-        <article className="col-span-12 mb-section-gap min-w-0 max-w-full break-words pb-24 sm:pb-20 lg:col-span-8 lg:col-start-5">
+        {/* Article content — full width on mobile */}
+        <article className="w-full mb-section-gap min-w-0 break-words pb-24 sm:pb-20 lg:col-span-8 lg:col-start-5 lg:w-auto">
           {post.excerpt && (
-            <p className="font-serif italic text-[20px] sm:text-[24px] leading-[1.55] text-secondary mb-10 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
+            <p className="font-serif italic text-[18px] sm:text-[24px] leading-[1.55] text-secondary mb-10 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
               {post.excerpt}
             </p>
           )}

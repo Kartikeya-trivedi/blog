@@ -76,16 +76,21 @@
     --spacing-section-gap: 64px;
   }
   .text-display {
-    @apply text-[36px] sm:text-[40px];
+    @apply text-[32px] sm:text-[40px];
   }
   .text-headline-lg {
-    @apply text-[28px] sm:text-[32px];
+    @apply text-[24px] sm:text-[32px];
   }
   .text-headline-md {
-    @apply text-[24px];
+    @apply text-[20px];
   }
   .text-headline-sm {
-    @apply text-[20px];
+    @apply text-[18px];
+  }
+
+  .markdown-content {
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   /* Code blocks scroll instead of blowing out */
