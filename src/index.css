@@ -76,7 +76,7 @@
 }
 
 .caption {
-  @apply block text-center text-[11px] font-mono text-secondary mt-[-24px] mb-8 uppercase tracking-widest opacity-70;
+  @apply block text-left text-[11px] font-mono text-secondary mt-[-24px] mb-8 uppercase tracking-widest opacity-70;
 }
 
 /* Technical Writing Enhancements */

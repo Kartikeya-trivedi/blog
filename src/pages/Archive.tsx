@@ -9,7 +9,7 @@ export default function ArchivePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max px-margin-page py-24"
+      className="max-w-container-max mx-auto px-margin-page py-24"
     >
       <header className="mb-24 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>

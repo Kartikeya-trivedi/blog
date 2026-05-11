@@ -6,7 +6,7 @@ export default function AboutPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-[800px] px-margin-page py-24"
+      className="max-w-[800px] mx-auto px-margin-page py-24"
     >
       <section className="mb-24 text-left">
         <span className="text-label-caps text-secondary mb-6 block">THE EDITORIAL</span>

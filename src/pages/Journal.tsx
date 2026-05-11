@@ -48,7 +48,7 @@ export default function JournalPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max px-margin-page"
+      className="max-w-container-max mx-auto px-margin-page"
     >
       {/* Hero Featured Post */}
       <section className="mt-16 mb-section-gap">
@@ -69,7 +69,7 @@ export default function JournalPage() {
               />
             </motion.div>
           </div>
-          <div className="col-span-12 md:col-span-10 text-left">
+          <div className="col-span-12 md:col-start-3 md:col-span-8 text-left">
 
             <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
             <p className="text-body-lg text-secondary mb-10 max-w-2xl italic font-serif">

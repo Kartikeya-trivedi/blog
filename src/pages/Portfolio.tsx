@@ -10,7 +10,7 @@ export default function PortfolioPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max px-margin-page"
+      className="max-w-container-max mx-auto px-margin-page"
     >
       {/* Hero Section */}
       <section className="mt-24 mb-section-gap grid grid-cols-12 gap-8 items-end">

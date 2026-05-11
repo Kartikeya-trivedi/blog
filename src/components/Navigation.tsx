@@ -13,7 +13,7 @@ export function Navbar() {
 
   return (
     <nav className="bg-background border-b border-outline-variant sticky top-0 z-50">
-      <div className="relative flex items-center w-full px-margin-page py-5 max-w-container-max">
+      <div className="relative flex items-center w-full px-margin-page py-5 max-w-container-max mx-auto">
         {/* Logo — centered on mobile, left on desktop */}
         <Link
           to="/"
@@ -48,7 +48,7 @@ export function Navbar() {
 export function Footer() {
   return (
     <footer className="bg-background border-t border-outline-variant mt-section-gap">
-      <div className="flex flex-col md:flex-row justify-between items-start w-full px-margin-page py-16 max-w-container-max gap-8">
+      <div className="flex flex-col md:flex-row justify-between items-start w-full px-margin-page py-16 max-w-container-max mx-auto gap-8">
         <div className="font-serif text-headline-sm text-tertiary">The Editorial.</div>
         <div className="flex gap-8">
           <Link to="/" className="text-secondary text-label-caps hover:text-tertiary underline decoration-1 underline-offset-4 transition-all tracking-widest">Journal</Link>

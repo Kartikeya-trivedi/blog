@@ -44,7 +44,7 @@ export default function SettingsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="max-w-container-max px-margin-page py-12"
+      className="max-w-container-max mx-auto px-margin-page py-12"
     >
       <AdminLayout>
         <header className="mb-12">
