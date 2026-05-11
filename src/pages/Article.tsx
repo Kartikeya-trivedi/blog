@@ -126,54 +126,80 @@ export default function ArticlePage() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-background overflow-y-auto"
           >
-            <div className="max-w-[680px] mx-auto px-6 sm:px-10 py-16 sm:py-24">
-              {/* Zen header */}
-              <div className="flex items-center justify-between mb-10">
-                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-secondary opacity-60">{post.category}</span>
-                <button
-                  onClick={() => setIsZenMode(false)}
-                  className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-secondary hover:text-tertiary transition-colors"
-                >
-                  <Maximize2 size={14} />
-                  <span className="hidden sm:inline">Exit Zen</span>
-                </button>
-              </div>
-
-              <h1 className="font-serif text-[32px] sm:text-[48px] leading-[1.15] tracking-[-0.02em] font-normal mb-8">
-                {post.title}
-              </h1>
-
-              <div className="flex items-center gap-6 mb-12 pb-8 border-b border-outline-variant text-[11px] font-mono text-secondary uppercase tracking-widest">
-                <span>{post.author}</span>
-                <span className="opacity-40">·</span>
-                <span>{post.date}</span>
-                <span className="opacity-40">·</span>
-                <span className="flex items-center gap-1"><Clock size={11} /> {calculateReadTime(post.content)} min</span>
-              </div>
-
-              {post.excerpt && (
-                <p className="font-serif italic text-[22px] leading-[1.6] text-secondary mb-12 border-l-4 border-outline-variant pl-6">
-                  {post.excerpt}
-                </p>
-              )}
-
-              <div className="zen-article-content">
-                <MarkdownRenderer content={post.content} />
-              </div>
-
-              <div className="mt-16 pt-8 border-t border-outline-variant flex items-center justify-between">
-                <button
-                  onClick={() => setIsZenMode(false)}
-                  className="flex items-center gap-2 text-label-caps text-secondary hover:text-tertiary transition-colors"
-                >
-                  <Maximize2 size={14} /> Exit Zen Mode
-                </button>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => handleShare('twitter')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Twitter size={16} /></button>
-                  <button onClick={() => handleShare('linkedin')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={16} /></button>
-                  <button onClick={() => handleShare('copy')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={16} /></button>
+            {/* Zen top bar */}
+            <div className="sticky top-0 bg-background/90 backdrop-blur-sm border-b border-outline-variant z-10">
+              <div className="max-w-[1200px] mx-auto px-6 sm:px-12 py-3 flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50">{post.category} — {post.title}</span>
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:flex items-center gap-1">
+                    <button onClick={() => handleShare('twitter')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><Twitter size={14} /></button>
+                    <button onClick={() => handleShare('linkedin')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={14} /></button>
+                    <button onClick={() => handleShare('copy')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={14} /></button>
+                  </div>
+                  <button
+                    onClick={() => setIsZenMode(false)}
+                    className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-secondary hover:text-tertiary transition-colors border border-outline-variant px-3 py-1.5 rounded-full"
+                  >
+                    <Maximize2 size={12} />
+                    Exit Zen
+                  </button>
                 </div>
               </div>
+            </div>
+
+            {/* Zen body — wide on desktop, narrow on mobile */}
+            <div className="max-w-[1200px] mx-auto px-6 sm:px-12 py-10 sm:py-16 lg:py-20 flex gap-16">
+
+              {/* Main article — full width mobile, ~70% desktop */}
+              <div className="flex-1 min-w-0">
+                <div className="max-w-[760px]">
+                  <h1 className="font-serif text-[32px] sm:text-[52px] lg:text-[64px] leading-[1.1] tracking-[-0.02em] font-normal mb-6 sm:mb-8">
+                    {post.title}
+                  </h1>
+
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-10 pb-8 border-b border-outline-variant text-[11px] font-mono text-secondary uppercase tracking-widest">
+                    <span>{post.author}</span>
+                    <span className="opacity-30">·</span>
+                    <span>{post.date}</span>
+                    <span className="opacity-30">·</span>
+                    <span className="flex items-center gap-1"><Clock size={11} /> {calculateReadTime(post.content)} min read</span>
+                  </div>
+
+                  {post.excerpt && (
+                    <p className="font-serif italic text-[20px] sm:text-[24px] leading-[1.6] text-secondary mb-12 border-l-4 border-outline-variant pl-6">
+                      {post.excerpt}
+                    </p>
+                  )}
+
+                  <div className="zen-article-content">
+                    <MarkdownRenderer content={post.content} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mini TOC — desktop only, sticky right column */}
+              {toc.length > 0 && (
+                <aside className="hidden lg:block w-[220px] shrink-0">
+                  <div className="sticky top-24 border-l border-outline-variant pl-6 py-2">
+                    <h4 className="text-[9px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5">On this page</h4>
+                    <ul className="space-y-3">
+                      {toc.map(({ id, text, level }, i) => (
+                        <li key={i} style={{ marginLeft: level > 1 ? `${(level - 1) * 0.75}rem` : '0' }}>
+                          <a
+                            href={`#${id}`}
+                            className={cn(
+                              "text-[11px] font-mono leading-tight hover:text-tertiary transition-colors block",
+                              level === 1 ? "text-tertiary font-semibold" : "text-secondary opacity-60"
+                            )}
+                          >
+                            {text}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </aside>
+              )}
             </div>
           </motion.div>
         )}
@@ -199,7 +225,7 @@ export default function ArticlePage() {
       </AnimatePresence>
 
       {/* Article header section */}
-      <section className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page pt-8 sm:pt-16">
+      <section className="max-w-container-max mx-auto px-margin-page pt-8 sm:pt-16">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 mb-6 sm:mb-8 text-[10px] text-secondary font-mono tracking-widest uppercase overflow-hidden">
           <Link to="/" className="hover:text-tertiary transition-colors shrink-0">Journal</Link>
@@ -271,7 +297,7 @@ export default function ArticlePage() {
       </section>
 
       {/* Article body + TOC */}
-      <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
+      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
         {/* TOC Sidebar — desktop only */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
           <div className="border-l border-outline-variant pl-8 py-2">
@@ -331,7 +357,7 @@ export default function ArticlePage() {
 
       {/* Related posts */}
       <section className="bg-surface-container-low py-section-gap border-t border-outline-variant">
-        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page">
+        <div className="max-w-container-max mx-auto px-margin-page">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-10 sm:mb-16">
             <h3 className="font-serif text-[32px] sm:text-[48px] leading-[1.2] font-normal text-tertiary">Related Discourse</h3>
             <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all text-xs self-start sm:self-auto">VIEW FULL ARCHIVE</Link>
@@ -379,7 +405,7 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
   };
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 sm:px-8 lg:px-margin-page">
+    <div className="max-w-[720px] mx-auto px-margin-page">
       <div className="mb-16 sm:mb-24">
         <span className="text-label-caps text-secondary mb-4 block text-[10px]">PARTICIPATION</span>
         <h2 className="font-serif text-[36px] sm:text-[48px] leading-[1.2] font-normal mb-10 sm:mb-12">Public Responses.</h2>

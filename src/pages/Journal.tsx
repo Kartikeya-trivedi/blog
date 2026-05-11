@@ -58,7 +58,7 @@ export default function JournalPage() {
               initial={{ scale: 1.05 }}
               animate={{ scale: 1 }}
               transition={{ duration: 1.5 }}
-              className="relative w-full aspect-[21/9] overflow-hidden mb-12"
+              className="relative w-full aspect-square sm:aspect-[4/3] lg:aspect-[21/9] overflow-hidden mb-8 sm:mb-12"
             >
               <img 
                 alt="Featured post" 

@@ -13,11 +13,17 @@ export function Navbar() {
 
   return (
     <nav className="bg-background border-b border-outline-variant sticky top-0 z-50">
-      <div className="flex justify-between items-center w-full px-margin-page py-6 max-w-container-max mx-auto">
-        <Link to="/" className="font-serif text-headline-md text-tertiary tracking-tight uppercase">
+      <div className="relative flex items-center w-full px-margin-page py-5 max-w-container-max mx-auto">
+        {/* Logo — centered on mobile, left on desktop */}
+        <Link
+          to="/"
+          className="font-serif text-headline-md text-tertiary tracking-tight uppercase md:static absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 whitespace-nowrap"
+        >
           The Editorial
         </Link>
-        <div className="hidden md:flex items-center gap-10">
+
+        {/* Desktop nav links */}
+        <div className="hidden md:flex items-center gap-10 ml-auto">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path || (link.path === '/' && location.pathname.startsWith('/article'));
             return (
@@ -34,12 +40,6 @@ export function Navbar() {
             );
           })}
         </div>
-        <Link 
-          to="/sign-in" 
-          className="bg-tertiary text-white px-6 py-2 text-label-caps hover:bg-secondary transition-all"
-        >
-          Sign In
-        </Link>
       </div>
     </nav>
   );
