@@ -160,12 +160,12 @@ export default function ArticlePage() {
         </div>
 
         {post.image && (
-          <div className="w-full aspect-[21/9] bg-surface-container overflow-hidden mb-16 grayscale">
+          <div className="w-full aspect-[21/9] bg-surface-container overflow-hidden mb-16">
             <img 
               alt={post.title} 
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000" 
+              className="w-full h-full object-cover transition-all duration-1000" 
               src={post.image} 
             />
           </div>
@@ -183,9 +183,10 @@ export default function ArticlePage() {
              <ul className="space-y-4">
                {toc.map(({ id, text, level }, i) => (
                  <li key={i} className={cn(
-                   "text-[11px] font-mono leading-tight transition-colors",
+                   "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2",
                    level === 1 ? "text-tertiary font-bold" : "text-secondary opacity-60"
                  )} style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}>
+                   {level > 1 && <span className="mt-1.5 w-1 h-1 bg-current rounded-full flex-shrink-0" />}
                    <a href={`#${id}`} className="hover:underline tracking-tight uppercase">
                       {text}
                    </a>
