@@ -20,6 +20,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchPosts = async () => {
+      // Sync slugs for any legacy posts that don't have one yet
+      await blogService.syncSlugs();
+
       const data = await blogService.getPosts();
       setPosts(data);
     };

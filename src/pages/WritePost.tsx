@@ -27,6 +27,10 @@ export default function WritePostPage() {
   const [showRevisions, setShowRevisions] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   
+  // Undo/Redo History
+  const [history, setHistory] = useState<{ past: string[], future: string[] }>({ past: [], future: [] });
+  const [lastSavedContent, setLastSavedContent] = useState('');
+  
   const [post, setPost] = useState<BlogPost>({
     id: id || '', // Supabase will generate if empty
     title: '',
@@ -47,11 +51,68 @@ export default function WritePostPage() {
     if (id) {
       const fetchPost = async () => {
         const existing = await blogService.getPostById(id);
-        if (existing) setPost(existing);
+        if (existing) {
+          setPost(existing);
+          setLastSavedContent(existing.content);
+        }
       };
       fetchPost();
     }
   }, [id]);
+
+  // Debounced history push for typing
+  useEffect(() => {
+    if (post.content === lastSavedContent) return;
+    
+    const timer = setTimeout(() => {
+      setHistory(prev => ({
+        past: [...prev.past, lastSavedContent].slice(-50),
+        future: []
+      }));
+      setLastSavedContent(post.content);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [post.content, lastSavedContent]);
+
+  const undo = () => {
+    if (history.past.length === 0) return;
+    const previous = history.past[history.past.length - 1];
+    const newPast = history.past.slice(0, history.past.length - 1);
+    
+    setHistory({
+      past: newPast,
+      future: [post.content, ...history.future]
+    });
+    setLastSavedContent(previous);
+    setPost(prev => ({ ...prev, content: previous }));
+  };
+
+  const redo = () => {
+    if (history.future.length === 0) return;
+    const next = history.future[0];
+    const newFuture = history.future.slice(1);
+    
+    setHistory({
+      past: [...history.past, post.content],
+      future: newFuture
+    });
+    setLastSavedContent(next);
+    setPost(prev => ({ ...prev, content: next }));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Ctrl+Z or Cmd+Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    }
+    // Ctrl+Y or Cmd+Y or Ctrl+Shift+Z
+    if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')) {
+      e.preventDefault();
+      redo();
+    }
+  };
 
   useEffect(() => {
     const savedRevisions = localStorage.getItem('blog_revisions');
@@ -130,9 +191,15 @@ export default function WritePostPage() {
       
       if (resultText) {
         if (selection) {
+          const newContent = post.content.substring(0, start) + resultText + post.content.substring(end);
+          setHistory(prev => ({
+            past: [...prev.past, post.content].slice(-50),
+            future: []
+          }));
+          setLastSavedContent(newContent);
           setPost(prev => ({
             ...prev,
-            content: prev.content.substring(0, start) + resultText + prev.content.substring(end)
+            content: newContent
           }));
         } else {
           insertText(resultText, '');
@@ -164,9 +231,17 @@ export default function WritePostPage() {
       setPost(prev => {
         const contentBefore = prev.content.substring(0, start);
         const contentAfter = prev.content.substring(end);
+        const newContent = contentBefore + marker + contentAfter;
+        
+        setHistory(h => ({
+          past: [...h.past, prev.content].slice(-50),
+          future: []
+        }));
+        setLastSavedContent(newContent);
+        
         return {
           ...prev,
-          content: contentBefore + marker + contentAfter
+          content: newContent
         };
       });
     } catch (error) {
@@ -218,11 +293,18 @@ export default function WritePostPage() {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selection = textarea.value.substring(start, end);
-    const newText = before + selection + after;
+    const oldContent = post.content;
+    const newContent = oldContent.substring(0, start) + before + selection + after + oldContent.substring(end);
+
+    setHistory(prev => ({
+      past: [...prev.past, oldContent].slice(-50),
+      future: []
+    }));
+    setLastSavedContent(newContent);
 
     setPost(prev => ({
       ...prev,
-      content: prev.content.substring(0, start) + newText + prev.content.substring(end)
+      content: newContent
     }));
 
     setTimeout(() => {
@@ -638,6 +720,7 @@ export default function WritePostPage() {
                     )}
                     value={post.content}
                     onChange={(e) => setPost({ ...post, content: e.target.value })}
+                    onKeyDown={handleKeyDown}
                     onPaste={handlePaste}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}

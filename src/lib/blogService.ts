@@ -1,5 +1,14 @@
 import { supabase } from './supabase';
 
+export const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
+    .trim();
+};
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -208,5 +217,39 @@ export const blogService = {
       .getPublicUrl(filePath);
 
     return publicUrl;
+  },
+
+  syncSlugs: async () => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('id, title, slug')
+      .is('slug', null);
+
+    if (error) {
+      console.error('Error fetching posts for slug sync:', error);
+      return;
+    }
+
+    if (!data || data.length === 0) return;
+
+    console.log(`Syncing slugs for ${data.length} posts...`);
+
+    const updates = data.map(post => ({
+      id: post.id,
+      slug: slugify(post.title)
+    }));
+
+    for (const update of updates) {
+      const { error: updateError } = await supabase
+        .from('blogs')
+        .update({ slug: update.slug })
+        .eq('id', update.id);
+      
+      if (updateError) {
+        console.error(`Failed to update slug for post ${update.id}:`, updateError);
+      }
+    }
+    
+    console.log('Slug sync complete.');
   }
 };
