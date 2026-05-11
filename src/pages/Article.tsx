@@ -92,11 +92,11 @@ export default function ArticlePage() {
     }
   };
 
-  if (loading) return <div className="py-48 text-left text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
+  if (loading) return <div className="py-48 text-center text-label-caps animate-pulse">Retreiving manuscript from archives...</div>;
 
   if (!post) {
     return (
-      <div className="max-w-container-max mx-auto px-margin-page py-24 text-left">
+      <div className="max-w-container-max mx-auto px-margin-page py-24 text-center">
         <h1 className="text-display mb-8">Post not found.</h1>
         <Link to="/" className="text-label-caps border border-tertiary px-8 py-3 hover:bg-tertiary hover:text-white transition-all">
           Return to Journal

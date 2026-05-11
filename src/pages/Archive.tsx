@@ -50,13 +50,13 @@ export default function ArchivePage() {
         ))}
       </div>
 
-      <section className="mt-32 p-16 bg-surface-container text-left">
+      <section className="mt-32 p-16 bg-surface-container text-center">
         <h3 className="text-headline-md mb-8">Looking for something specific?</h3>
-        <div className="max-w-md">
+        <div className="max-w-md mx-auto">
           <input 
             type="text" 
             placeholder="SEARCH ARCHIVE..." 
-            className="w-full bg-transparent border-b border-tertiary px-4 py-3 text-label-caps focus:outline-none focus:border-secondary transition-all text-left"
+            className="w-full bg-transparent border-b border-tertiary px-4 py-3 text-label-caps focus:outline-none focus:border-secondary transition-all text-center"
           />
         </div>
       </section>

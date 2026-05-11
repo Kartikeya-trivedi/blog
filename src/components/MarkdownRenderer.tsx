@@ -160,7 +160,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
             if (className?.includes('callout-tip')) return <Callout type="tip">{children}</Callout>;
             if (className?.includes('callout-success')) return <Callout type="success">{children}</Callout>;
             if (className?.includes('callout-important')) return <Callout type="important">{children}</Callout>;
-            if (className?.includes('caption')) return <div className="text-[11px] font-mono text-secondary mt-2 text-left opacity-60 uppercase tracking-widest">{children}</div>;
+            if (className?.includes('caption')) return <div className="text-[11px] font-mono text-secondary mt-2 text-center opacity-60 uppercase tracking-widest">{children}</div>;
             return <div className={className} {...props}>{children}</div>;
           },
           blockquote({ children }) {
@@ -205,7 +205,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
                 referrerPolicy="no-referrer"
               />
               {title && (
-                <figcaption className="mt-4 text-left px-4 sm:px-0">
+                <figcaption className="mt-4 text-center px-4 sm:px-0">
                   <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.2em] opacity-60">
                     Fig. — {title}
                   </span>
