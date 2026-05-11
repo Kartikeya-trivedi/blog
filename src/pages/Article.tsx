@@ -110,7 +110,7 @@ export default function ArticlePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="w-full relative"
+      className="relative w-full min-w-0"
     >
       {/* Reading Progress Bar */}
       <motion.div className="fixed top-0 left-0 right-0 h-[2px] bg-tertiary z-[100] origin-left" style={{ scaleX }} />

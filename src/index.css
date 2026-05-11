@@ -63,9 +63,15 @@
     @apply text-[40px];
   }
 
-  /* Prevent horizontal blowout */
+  /* Prevent horizontal blowout — clip on html + body so in-app browsers center correctly */
+  html {
+    width: 100%;
+    overflow-x: clip;
+  }
+
   body {
-    overflow-x: hidden;
+    width: 100%;
+    overflow-x: clip;
   }
 
   /* Code blocks scroll instead of blowing out */

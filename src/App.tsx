@@ -73,10 +73,10 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex min-w-0 w-full flex-col">
         <Navbar />
         <AnalyticsTracker />
-        <main className="flex-grow">
+        <main className="min-w-0 w-full flex-grow">
           <AnimatedRoutes />
         </main>
         <Footer />
