@@ -187,8 +187,8 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-8 space-y-3">{children}</ol>,
           li: ({ children }) => <li className="text-body-lg text-on-surface/90">{children}</li>,
           table: ({ children }) => (
-            <div className="overflow-x-auto my-12">
-              <table className="w-full border-collapse border border-outline-variant font-sans text-sm">
+            <div className="overflow-x-auto my-12 -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="min-w-full border-collapse border border-outline-variant font-sans text-sm">
                 {children}
               </table>
             </div>
@@ -197,15 +197,15 @@ export function MarkdownRenderer({ content }: { content: string }) {
           td: ({ children }) => <td className="border border-outline-variant px-4 py-3">{children}</td>,
           a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
           img: ({ src, alt, title }) => (
-            <figure className="my-12">
+            <figure className="my-10 sm:my-12 -mx-4 sm:mx-0">
               <img 
                 src={src} 
                 alt={alt} 
-                className="w-full h-auto block" 
+                className="w-full h-auto block max-w-full" 
                 referrerPolicy="no-referrer"
               />
               {title && (
-                <figcaption className="mt-4 text-center">
+                <figcaption className="mt-4 text-center px-4 sm:px-0">
                   <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.2em] opacity-60">
                     Fig. — {title}
                   </span>

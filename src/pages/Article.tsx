@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, useScroll, useSpring } from 'motion/react';
-import { ChevronRight, ArrowLeft, Share2, Twitter, Linkedin, Link as LinkIcon, ExternalLink, Bookmark, Clock } from 'lucide-react';
+import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
+import { ChevronRight, Twitter, Linkedin, Link as LinkIcon, ExternalLink, Bookmark, Clock, Minimize2, Maximize2, ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
 import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
@@ -12,6 +12,7 @@ export default function ArticlePage() {
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<any[]>([]);
+  const [isZenMode, setIsZenMode] = useState(false);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -30,7 +31,6 @@ export default function ArticlePage() {
             const all = (await blogService.getPosts()).filter(p => p.id !== data.id && p.status === 'PUBLISHED');
             const sameCategory = all.filter(p => p.category === data.category);
             setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
-            
             const postComments = await blogService.getComments(data.id);
             setComments(postComments);
           }
@@ -46,6 +46,16 @@ export default function ArticlePage() {
     };
     fetchPost();
   }, [slug]);
+
+  // Lock body scroll in zen mode on mobile
+  useEffect(() => {
+    if (isZenMode) {
+      document.documentElement.classList.add('zen-mode');
+    } else {
+      document.documentElement.classList.remove('zen-mode');
+    }
+    return () => document.documentElement.classList.remove('zen-mode');
+  }, [isZenMode]);
 
   const toc = useMemo(() => {
     if (!post?.content) return [];
@@ -66,7 +76,6 @@ export default function ArticlePage() {
   const handleShare = (platform: 'twitter' | 'linkedin' | 'copy') => {
     const url = window.location.href;
     const title = post?.title || 'The Editorial Post';
-    
     if (platform === 'twitter') {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
     } else if (platform === 'linkedin') {
@@ -104,158 +113,245 @@ export default function ArticlePage() {
       className="w-full relative"
     >
       {/* Reading Progress Bar */}
-      <motion.div className="fixed top-0 left-0 right-0 h-1 bg-tertiary z-[100] origin-left" style={{ scaleX }} />
+      <motion.div className="fixed top-0 left-0 right-0 h-[2px] bg-tertiary z-[100] origin-left" style={{ scaleX }} />
 
-      <section className="max-w-container-max mx-auto px-margin-page pt-16">
-        <nav className="flex items-center gap-2 mb-8 text-[10px] text-secondary font-mono tracking-widest uppercase">
-          <Link to="/" className="hover:text-tertiary transition-colors">Journal</Link>
-          <ChevronRight size={10} />
-          <span className="text-tertiary opacity-60">{post.category}</span>
-          <ChevronRight size={10} />
-          <span className="text-tertiary opacity-40 truncate max-w-[200px]">{post.title}</span>
+      {/* ── ZEN MODE OVERLAY ── */}
+      <AnimatePresence>
+        {isZenMode && (
+          <motion.div
+            key="zen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-background overflow-y-auto"
+          >
+            <div className="max-w-[680px] mx-auto px-6 sm:px-10 py-16 sm:py-24">
+              {/* Zen header */}
+              <div className="flex items-center justify-between mb-10">
+                <span className="text-[10px] font-mono tracking-[0.2em] uppercase text-secondary opacity-60">{post.category}</span>
+                <button
+                  onClick={() => setIsZenMode(false)}
+                  className="flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase text-secondary hover:text-tertiary transition-colors"
+                >
+                  <Maximize2 size={14} />
+                  <span className="hidden sm:inline">Exit Zen</span>
+                </button>
+              </div>
+
+              <h1 className="font-serif text-[32px] sm:text-[48px] leading-[1.15] tracking-[-0.02em] font-normal mb-8">
+                {post.title}
+              </h1>
+
+              <div className="flex items-center gap-6 mb-12 pb-8 border-b border-outline-variant text-[11px] font-mono text-secondary uppercase tracking-widest">
+                <span>{post.author}</span>
+                <span className="opacity-40">·</span>
+                <span>{post.date}</span>
+                <span className="opacity-40">·</span>
+                <span className="flex items-center gap-1"><Clock size={11} /> {calculateReadTime(post.content)} min</span>
+              </div>
+
+              {post.excerpt && (
+                <p className="font-serif italic text-[22px] leading-[1.6] text-secondary mb-12 border-l-4 border-outline-variant pl-6">
+                  {post.excerpt}
+                </p>
+              )}
+
+              <div className="zen-article-content">
+                <MarkdownRenderer content={post.content} />
+              </div>
+
+              <div className="mt-16 pt-8 border-t border-outline-variant flex items-center justify-between">
+                <button
+                  onClick={() => setIsZenMode(false)}
+                  className="flex items-center gap-2 text-label-caps text-secondary hover:text-tertiary transition-colors"
+                >
+                  <Maximize2 size={14} /> Exit Zen Mode
+                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleShare('twitter')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Twitter size={16} /></button>
+                  <button onClick={() => handleShare('linkedin')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={16} /></button>
+                  <button onClick={() => handleShare('copy')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={16} /></button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── NORMAL MODE ── */}
+      {/* Zen Mode FAB */}
+      <AnimatePresence>
+        {!isZenMode && (
+          <motion.button
+            key="fab"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => setIsZenMode(true)}
+            title="Enter Zen Mode"
+            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-tertiary text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:opacity-90 transition-all text-[11px] font-mono tracking-widest uppercase"
+          >
+            <Minimize2 size={14} />
+            <span className="hidden sm:inline">Zen</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Article header section */}
+      <section className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page pt-8 sm:pt-16">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 mb-6 sm:mb-8 text-[10px] text-secondary font-mono tracking-widest uppercase overflow-hidden">
+          <Link to="/" className="hover:text-tertiary transition-colors shrink-0">Journal</Link>
+          <ChevronRight size={10} className="shrink-0" />
+          <span className="text-tertiary opacity-60 shrink-0 truncate">{post.category}</span>
+          <ChevronRight size={10} className="shrink-0" />
+          <span className="text-tertiary opacity-40 truncate">{post.title}</span>
         </nav>
 
+        {/* Series badge */}
         {post.series && (
-          <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded-full text-[10px] font-mono text-tertiary">
-            <Bookmark size={12} className="text-tertiary" />
-            <span className="uppercase tracking-widest opacity-60">Series:</span>
-            <span className="font-bold">{post.series}</span>
-            <span className="px-1.5 py-0.5 bg-tertiary text-white rounded-full">PART {post.seriesOrder || 1}</span>
+          <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded-full text-[10px] font-mono text-tertiary max-w-full overflow-hidden">
+            <Bookmark size={12} className="text-tertiary shrink-0" />
+            <span className="uppercase tracking-widest opacity-60 shrink-0">Series:</span>
+            <span className="font-bold truncate">{post.series}</span>
+            <span className="px-1.5 py-0.5 bg-tertiary text-white rounded-full shrink-0">PART {post.seriesOrder || 1}</span>
           </div>
         )}
 
-        <motion.h1 
-          className="font-serif leading-[1.1] tracking-[-0.02em] font-normal text-[36px] sm:text-[56px] lg:text-[72px] max-w-[900px] mb-8 sm:mb-12"
+        {/* Title */}
+        <motion.h1
+          className="font-serif leading-[1.1] tracking-[-0.02em] font-normal text-[32px] sm:text-[52px] lg:text-[72px] mb-6 sm:mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
         >
           {post.title}
         </motion.h1>
 
-        <div className="flex flex-col gap-6 mb-8 sm:mb-12 border-b border-outline-variant pb-6 sm:pb-8">
-          <div className="flex flex-wrap gap-8 sm:gap-12">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label-caps text-secondary text-[10px]">AUTHOR</span>
-              <span className="text-body-md text-tertiary font-medium">{post.author}</span>
+        {/* Metadata */}
+        <div className="border-b border-outline-variant pb-5 sm:pb-8 mb-6 sm:mb-10">
+          <div className="flex flex-wrap gap-x-8 gap-y-3 mb-5">
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-mono tracking-[0.18em] uppercase text-secondary opacity-60">Author</span>
+              <span className="text-[14px] sm:text-[16px] font-sans font-medium text-tertiary">{post.author}</span>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label-caps text-secondary text-[10px]">DATE</span>
-              <span className="text-body-md text-tertiary font-medium">{post.date}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-mono tracking-[0.18em] uppercase text-secondary opacity-60">Date</span>
+              <span className="text-[14px] sm:text-[16px] font-sans font-medium text-tertiary">{post.date}</span>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label-caps text-secondary text-[10px]">READ TIME</span>
-              <span className="text-body-md text-tertiary font-medium flex items-center gap-1.5">
-                <Clock size={16} /> {calculateReadTime(post.content)} MIN
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-mono tracking-[0.18em] uppercase text-secondary opacity-60">Read Time</span>
+              <span className="text-[14px] sm:text-[16px] font-sans font-medium text-tertiary flex items-center gap-1.5">
+                <Clock size={14} /> {calculateReadTime(post.content)} min
               </span>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-label-caps text-secondary text-[10px] mr-1">SHARE</span>
-            <button onClick={() => handleShare('twitter')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Twitter size={18} /></button>
-            <button onClick={() => handleShare('linkedin')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={18} /></button>
-            <button onClick={() => handleShare('copy')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={18} /></button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-mono tracking-[0.18em] uppercase text-secondary opacity-60 mr-1">Share</span>
+            <button onClick={() => handleShare('twitter')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><Twitter size={16} /></button>
+            <button onClick={() => handleShare('linkedin')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={16} /></button>
+            <button onClick={() => handleShare('copy')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={16} /></button>
           </div>
         </div>
 
+        {/* Hero image */}
         {post.image && (
-          <div className="w-full aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] overflow-hidden mb-10 sm:mb-16">
-            <img 
-              alt={post.title} 
+          <div className="w-full aspect-square sm:aspect-[4/3] lg:aspect-[21/9] overflow-hidden mb-8 sm:mb-16">
+            <img
+              alt={post.title}
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover" 
-              src={post.image} 
+              className="w-full h-full object-cover"
+              src={post.image}
             />
           </div>
         )}
       </section>
 
-      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative overflow-hidden">
-        {/* TOC Sidebar */}
+      {/* Article body + TOC */}
+      <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
+        {/* TOC Sidebar — desktop only */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
           <div className="border-l border-outline-variant pl-8 py-2">
-             <h4 className="text-label-caps text-tertiary mb-6 flex items-center gap-2">
-               <span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span>
-               DOCUMENT INDEX
-             </h4>
-             <ul className="space-y-4">
-               {toc.map(({ id, text, level }, i) => (
-                 <li key={i} className={cn(
-                   "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2",
-                   level === 1 ? "text-tertiary font-bold" : "text-secondary opacity-60"
-                 )} style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}>
-                   {level > 1 && <span className="mt-1.5 w-1 h-1 bg-current rounded-full flex-shrink-0" />}
-                   <a href={`#${id}`} className="hover:underline tracking-tight uppercase">
-                      {text}
-                   </a>
-                 </li>
-               ))}
-               {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
-             </ul>
+            <h4 className="text-label-caps text-tertiary mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-tertiary rounded-full" />
+              DOCUMENT INDEX
+            </h4>
+            <ul className="space-y-4">
+              {toc.map(({ id, text, level }, i) => (
+                <li key={i} className={cn(
+                  "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2",
+                  level === 1 ? "text-tertiary font-bold" : "text-secondary opacity-60"
+                )} style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}>
+                  {level > 1 && <span className="mt-1.5 w-1 h-1 bg-current rounded-full flex-shrink-0" />}
+                  <a href={`#${id}`} className="hover:underline tracking-tight uppercase">{text}</a>
+                </li>
+              ))}
+              {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
+            </ul>
 
-             {post.tags && post.tags.length > 0 && (
-               <div className="mt-12 pt-8 border-t border-outline-variant">
-                 <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
-                 <div className="flex flex-wrap gap-2">
-                   {post.tags.map(tag => (
-                     <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
-                   ))}
-                 </div>
-               </div>
-             )}
+            {post.tags && post.tags.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-outline-variant">
+                <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map(tag => (
+                    <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
 
-             {post.canonicalUrl && (
-               <div className="mt-12 pt-8 border-t border-outline-variant">
-                  <a 
-                    href={post.canonicalUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-[10px] font-mono text-secondary hover:text-tertiary transition-colors"
-                  >
-                    <ExternalLink size={14} /> CANONICAL SOURCE
-                  </a>
-               </div>
-             )}
+            {post.canonicalUrl && (
+              <div className="mt-12 pt-8 border-t border-outline-variant">
+                <a
+                  href={post.canonicalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[10px] font-mono text-secondary hover:text-tertiary transition-colors"
+                >
+                  <ExternalLink size={14} /> CANONICAL SOURCE
+                </a>
+              </div>
+            )}
           </div>
         </aside>
 
-        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap min-w-0">
-          <div className="prose-container">
-            {post.excerpt && (
-              <p className="text-headline-md italic font-serif text-secondary mb-12 border-l-4 border-outline-variant pl-8 py-2 leading-relaxed">
-                {post.excerpt}
-              </p>
-            )}
-            <MarkdownRenderer content={post.content} />
-          </div>
+        {/* Article content */}
+        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap min-w-0 overflow-hidden">
+          {post.excerpt && (
+            <p className="font-serif italic text-[20px] sm:text-[24px] leading-[1.55] text-secondary mb-10 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
+              {post.excerpt}
+            </p>
+          )}
+          <MarkdownRenderer content={post.content} />
         </article>
       </div>
 
+      {/* Related posts */}
       <section className="bg-surface-container-low py-section-gap border-t border-outline-variant">
-        <div className="max-w-container-max mx-auto px-margin-page">
-          <div className="flex justify-between items-end mb-16">
-            <h3 className="text-headline-lg text-tertiary">Related Discourse</h3>
-            <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all text-xs">VIEW FULL ARCHIVE</Link>
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-margin-page">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-10 sm:mb-16">
+            <h3 className="font-serif text-[32px] sm:text-[48px] leading-[1.2] font-normal text-tertiary">Related Discourse</h3>
+            <Link to="/archive" className="text-label-caps text-tertiary border-b border-tertiary hover:opacity-60 transition-all text-xs self-start sm:self-auto">VIEW FULL ARCHIVE</Link>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-12">
             {relatedPosts.map(related => (
-              <RelatedCard 
+              <RelatedCard
                 key={related.id}
                 id={related.id}
                 slug={related.slug}
-                image={related.image || "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop"} 
-                category={related.category} 
-                title={related.title} 
+                image={related.image || "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop"}
+                category={related.category}
+                title={related.title}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Comment Section */}
+      {/* Comments */}
       <section className="py-section-gap bg-background border-t border-outline-variant">
         <CommentSection postId={post.id} comments={comments} onCommentAdded={onCommentAdded} />
       </section>
@@ -270,14 +366,9 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.author.trim() || !newComment.content.trim()) return;
-
     setIsSubmitting(true);
     try {
-      await blogService.addComment({
-        postId,
-        author: newComment.author,
-        content: newComment.content
-      });
+      await blogService.addComment({ postId, author: newComment.author, content: newComment.content });
       onCommentAdded();
       setNewComment({ author: '', content: '' });
     } catch (e) {
@@ -288,28 +379,26 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
   };
 
   return (
-    <div className="max-w-[800px] mx-auto px-margin-page">
-      <div className="mb-24">
+    <div className="max-w-[720px] mx-auto px-4 sm:px-8 lg:px-margin-page">
+      <div className="mb-16 sm:mb-24">
         <span className="text-label-caps text-secondary mb-4 block text-[10px]">PARTICIPATION</span>
-        <h2 className="text-display text-4xl mb-12">Public Responses.</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-8 border-b border-outline-variant pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex flex-col gap-2">
-              <label className="text-label-caps text-[10px] text-secondary">IDENTITY</label>
-              <input 
-                type="text" 
-                required
-                placeholder="YOUR NAME"
-                className="bg-transparent border-b border-outline-variant py-2 focus:outline-none focus:border-tertiary transition-all text-body-md"
-                value={newComment.author}
-                onChange={(e) => setNewComment({...newComment, author: e.target.value})}
-              />
-            </div>
+        <h2 className="font-serif text-[36px] sm:text-[48px] leading-[1.2] font-normal mb-10 sm:mb-12">Public Responses.</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-8 border-b border-outline-variant pb-12 sm:pb-16">
+          <div className="flex flex-col gap-2">
+            <label className="text-label-caps text-[10px] text-secondary">IDENTITY</label>
+            <input
+              type="text"
+              required
+              placeholder="YOUR NAME"
+              className="bg-transparent border-b border-outline-variant py-2 focus:outline-none focus:border-tertiary transition-all text-body-md"
+              value={newComment.author}
+              onChange={(e) => setNewComment({...newComment, author: e.target.value})}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-label-caps text-[10px] text-secondary">OBSERVATION</label>
-            <textarea 
+            <textarea
               required
               rows={4}
               placeholder="SHARE YOUR PERSPECTIVE..."
@@ -318,17 +407,17 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
               onChange={(e) => setNewComment({...newComment, content: e.target.value})}
             />
           </div>
-          <button 
+          <button
             type="submit"
             disabled={isSubmitting}
-            className="text-label-caps bg-tertiary text-white px-10 py-4 hover:opacity-90 transition-all disabled:opacity-50"
+            className="text-label-caps bg-tertiary text-white px-8 sm:px-10 py-4 hover:opacity-90 transition-all disabled:opacity-50"
           >
             {isSubmitting ? 'TRANSMITTING...' : 'COMMIT RESPONSE'}
           </button>
         </form>
       </div>
 
-      <div className="space-y-16">
+      <div className="space-y-12 sm:space-y-16">
         {comments.length === 0 ? (
           <p className="text-body-lg text-secondary italic font-serif py-12">
             The transcript is currently silent. Be the first to initiate discourse.
@@ -353,13 +442,13 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
 
 function RelatedCard({ id, slug, image, category, title }: { id: string, slug?: string, image: string, category: string, title: string }) {
   return (
-    <Link to={`/article/${slug || id}`} className="group flex flex-col gap-6">
+    <Link to={`/article/${slug || id}`} className="group flex flex-col gap-4 sm:gap-6">
       <div className="w-full aspect-[16/10] bg-surface-container overflow-hidden">
         <img src={image} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale group-hover:scale-105 group-hover:grayscale-0 transition-all duration-700" alt={title} />
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <span className="text-label-caps text-secondary text-[10px]">{category}</span>
-        <h4 className="text-headline-sm text-tertiary group-hover:italic transition-all">{title}</h4>
+        <h4 className="font-serif text-[20px] sm:text-[24px] leading-[1.4] font-medium text-tertiary group-hover:italic transition-all">{title}</h4>
       </div>
     </Link>
   );
