@@ -70,7 +70,7 @@ export default function JournalPage() {
             </motion.div>
           </div>
           <div className="col-span-12 md:col-start-3 md:col-span-8 text-center">
-            <span className="text-label-caps text-secondary mb-4 block">ESSAY — VOL. V</span>
+
             <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
             <p className="text-body-lg text-secondary mb-10 max-w-2xl mx-auto italic font-serif">
               Exploring the downstream consequences of decisions in software, machine learning, and the pursuit of a meaningful life.
