@@ -160,6 +160,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
             if (className?.includes('callout-tip')) return <Callout type="tip">{children}</Callout>;
             if (className?.includes('callout-success')) return <Callout type="success">{children}</Callout>;
             if (className?.includes('callout-important')) return <Callout type="important">{children}</Callout>;
+            if (className?.includes('caption')) return <div className="text-[11px] font-mono text-secondary mt-2 text-center opacity-60 uppercase tracking-widest">{children}</div>;
             return <div className={className} {...props}>{children}</div>;
           },
           blockquote({ children }) {
@@ -195,6 +196,25 @@ export function MarkdownRenderer({ content }: { content: string }) {
           th: ({ children }) => <th className="border border-outline-variant bg-surface-container px-4 py-3 text-left font-bold uppercase tracking-wider">{children}</th>,
           td: ({ children }) => <td className="border border-outline-variant px-4 py-3">{children}</td>,
           a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
+          img: ({ src, alt, title }) => (
+            <figure className="my-12">
+              <div className="bg-surface-container overflow-hidden rounded-lg border border-outline-variant">
+                <img 
+                  src={src} 
+                  alt={alt} 
+                  className="w-full h-auto grayscale hover:grayscale-0 transition-all duration-700" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              {title && (
+                <figcaption className="mt-4 text-center">
+                  <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.2em] opacity-60">
+                    Fig. — {title}
+                  </span>
+                </figcaption>
+              )}
+            </figure>
+          ),
         }}
       >
         {content}

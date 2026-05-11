@@ -165,7 +165,7 @@ export default function JournalPage() {
                     transition={{ duration: 0.4 }}
                   >
                     <Link 
-                      to={`/article/${article.id}`}
+                      to={`/article/${article.slug || article.id}`}
                       className="group block border-b border-outline-variant py-12 first:pt-0"
                     >
                       <div className="flex justify-between items-center gap-4">

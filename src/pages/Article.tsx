@@ -7,7 +7,7 @@ import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
 import { cn } from '@/src/lib/utils';
 
 export default function ArticlePage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +21,12 @@ export default function ArticlePage() {
 
   useEffect(() => {
     const fetchPost = async () => {
-      if (id) {
+      if (slug) {
         setLoading(true);
-        const data = await blogService.getPostById(id);
+        const data = await blogService.getPostBySlug(slug);
         if (data) {
           setPost(data);
-          const all = (await blogService.getPosts()).filter(p => p.id !== id && p.status === 'PUBLISHED');
+          const all = (await blogService.getPosts()).filter(p => p.id !== data.id && p.status === 'PUBLISHED');
           const sameCategory = all.filter(p => p.category === data.category);
           setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
           
@@ -38,7 +38,7 @@ export default function ArticlePage() {
       window.scrollTo(0, 0);
     };
     fetchPost();
-  }, [id]);
+  }, [slug]);
 
   const toc = useMemo(() => {
     if (!post?.content) return [];
@@ -70,8 +70,8 @@ export default function ArticlePage() {
   };
 
   const onCommentAdded = async () => {
-    if (id) {
-      const postComments = await blogService.getComments(id);
+    if (post) {
+      const postComments = await blogService.getComments(post.id);
       setComments(postComments);
     }
   };
@@ -177,8 +177,8 @@ export default function ArticlePage() {
                {toc.map(({ id, text, level }, i) => (
                  <li key={i} className={cn(
                    "text-[11px] font-mono leading-tight transition-colors",
-                   level > 1 ? "ml-4 text-secondary opacity-60" : "text-tertiary font-bold"
-                 )}>
+                   level === 1 ? "text-tertiary font-bold" : "text-secondary opacity-60"
+                 )} style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}>
                    <a href={`#${id}`} className="hover:underline tracking-tight uppercase">
                       {text}
                    </a>
@@ -237,6 +237,7 @@ export default function ArticlePage() {
               <RelatedCard 
                 key={related.id}
                 id={related.id}
+                slug={related.slug}
                 image={related.image || "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1974&auto=format&fit=crop"} 
                 category={related.category} 
                 title={related.title} 
@@ -342,9 +343,9 @@ function CommentSection({ postId, comments, onCommentAdded }: { postId: string, 
   );
 }
 
-function RelatedCard({ id, image, category, title }: { id: string, image: string, category: string, title: string }) {
+function RelatedCard({ id, slug, image, category, title }: { id: string, slug?: string, image: string, category: string, title: string }) {
   return (
-    <Link to={`/article/${id}`} className="group flex flex-col gap-6">
+    <Link to={`/article/${slug || id}`} className="group flex flex-col gap-6">
       <div className="w-full aspect-[16/10] bg-surface-container overflow-hidden">
         <img src={image} loading="lazy" referrerPolicy="no-referrer" className="w-full h-full object-cover grayscale group-hover:scale-105 group-hover:grayscale-0 transition-all duration-700" alt={title} />
       </div>

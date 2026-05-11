@@ -52,7 +52,7 @@ function AnimatedRoutes() {
         <Routes location={location}>
           {/* Public routes */}
           <Route path="/" element={<JournalPage />} />
-          <Route path="/article/:id" element={<ArticlePage />} />
+          <Route path="/article/:slug" element={<ArticlePage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/archive" element={<ArchivePage />} />

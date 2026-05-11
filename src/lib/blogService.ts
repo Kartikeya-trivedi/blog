@@ -15,6 +15,7 @@ export interface BlogPost {
   seriesOrder?: number;
   canonicalUrl?: string;
   volume?: string;
+  slug?: string;
 }
 
 export interface BlogComment {
@@ -44,6 +45,7 @@ function mapRowToPost(row: any): BlogPost {
     seriesOrder: row.series_order ?? row.seriesOrder ?? undefined,
     canonicalUrl: row.canonical_url ?? row.canonicalUrl ?? undefined,
     volume: row.volume ?? undefined,
+    slug: row.slug ?? undefined,
   };
 }
 
@@ -88,6 +90,20 @@ export const blogService = {
     return mapRowToPost(data);
   },
 
+  getPostBySlug: async (slug: string): Promise<BlogPost | undefined> => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    
+    if (error) {
+      // If not found by slug, try by ID as fallback for old links
+      return blogService.getPostById(slug);
+    }
+    return mapRowToPost(data);
+  },
+
   savePost: async (post: BlogPost) => {
     // Map camelCase JS fields to snake_case DB columns
     const payload: Record<string, unknown> = {
@@ -104,6 +120,7 @@ export const blogService = {
       series_order: post.seriesOrder ?? null,
       canonical_url: post.canonicalUrl ?? null,
       volume: post.volume ?? null,
+      slug: post.slug ?? null,
     };
 
     // Only include id if it's a valid UUID (edit). Let Supabase generate for new posts.

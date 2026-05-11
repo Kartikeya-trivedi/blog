@@ -39,7 +39,8 @@ export default function WritePostPage() {
     tags: [],
     series: '',
     seriesOrder: 1,
-    canonicalUrl: ''
+    canonicalUrl: '',
+    slug: ''
   });
 
   useEffect(() => {
@@ -256,6 +257,15 @@ export default function WritePostPage() {
     }
   };
 
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/--+/g, '-')
+      .trim();
+  };
+
   const handleSave = async (status: 'DRAFT' | 'PUBLISHED') => {
     if (!post.title.trim()) {
       alert('Please provide a title for the article.');
@@ -264,7 +274,11 @@ export default function WritePostPage() {
     
     setIsSaving(true);
     try {
-      const finalPost = { ...post, status };
+      const finalPost = { 
+        ...post, 
+        status,
+        slug: post.slug || slugify(post.title)
+      };
       await blogService.savePost(finalPost);
       navigate('/admin');
     } catch (e) {
