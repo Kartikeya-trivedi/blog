@@ -130,7 +130,7 @@ const Callout = ({ type, children }: { type: 'note' | 'warning' | 'tip' | 'succe
 
 export function MarkdownRenderer({ content }: { content: string }) {
   return (
-    <div className="markdown-content">
+    <div className="markdown-content min-w-0 break-words">
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -187,25 +187,25 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-8 space-y-3">{children}</ol>,
           li: ({ children }) => <li className="text-body-lg text-on-surface/90">{children}</li>,
           table: ({ children }) => (
-            <div className="overflow-x-auto my-12 -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="my-12 min-w-0 w-full max-w-full overflow-x-auto">
               <table className="min-w-full border-collapse border border-outline-variant font-sans text-sm">
                 {children}
               </table>
             </div>
           ),
-          th: ({ children }) => <th className="border border-outline-variant bg-surface-container px-4 py-3 text-left font-bold uppercase tracking-wider">{children}</th>,
-          td: ({ children }) => <td className="border border-outline-variant px-4 py-3">{children}</td>,
+          th: ({ children }) => <th className="min-w-0 break-words border border-outline-variant bg-surface-container px-3 py-3 text-left text-xs font-bold uppercase tracking-wider sm:px-4">{children}</th>,
+          td: ({ children }) => <td className="min-w-0 break-words border border-outline-variant px-3 py-3 sm:px-4">{children}</td>,
           a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
           img: ({ src, alt, title }) => (
-            <figure className="my-10 sm:my-12 -mx-4 sm:mx-0">
+            <figure className="my-10 w-full min-w-0 max-w-full sm:my-12">
               <img 
                 src={src} 
                 alt={alt} 
-                className="w-full h-auto block max-w-full" 
+                className="block h-auto w-full max-w-full object-cover" 
                 referrerPolicy="no-referrer"
               />
               {title && (
-                <figcaption className="mt-4 text-center px-4 sm:px-0">
+                <figcaption className="mt-4 text-center">
                   <span className="text-[10px] font-mono text-secondary uppercase tracking-[0.2em] opacity-60">
                     Fig. — {title}
                   </span>

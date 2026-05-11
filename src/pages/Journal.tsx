@@ -44,10 +44,10 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="mx-auto box-border w-full min-w-0 max-w-container-max px-margin-page">
-      {/* Hero Featured Post — single column (no 12-col grid) so mobile width cannot overshoot */}
-      <section className="mt-16 mb-section-gap w-full min-w-0">
-        <div className="relative mb-8 aspect-square w-full min-w-0 overflow-hidden sm:mb-12 sm:aspect-[4/3] lg:aspect-[21/9] grayscale transition-[filter] duration-700 hover:grayscale-0">
+    <>
+      {/* Full-bleed hero — same width as the nav bar, not the narrow text column */}
+      <section className="mt-8 w-full min-w-0 sm:mt-16" aria-label="Featured visual">
+        <div className="relative aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9] grayscale transition-[filter] duration-700 hover:grayscale-0">
           <img
             alt="Featured post"
             loading="lazy"
@@ -57,8 +57,11 @@ export default function JournalPage() {
             src="/chair.jpeg"
           />
         </div>
-        <div className="w-full min-w-0 text-center md:mx-auto md:max-w-[66.666667%]">
+      </section>
 
+      <div className="mx-auto box-border w-full min-w-0 max-w-container-max px-margin-page">
+      <section className="mb-section-gap mt-10 w-full min-w-0 sm:mt-12">
+        <div className="w-full min-w-0 text-center md:mx-auto md:max-w-[66.666667%]">
             <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
             <p className="text-body-lg text-secondary mb-10 max-w-2xl mx-auto italic font-serif">
               Exploring the downstream consequences of decisions in software, machine learning, and the pursuit of a meaningful life.
@@ -222,5 +225,6 @@ export default function JournalPage() {
         </aside>
       </section>
     </div>
+    </>
   );
 }

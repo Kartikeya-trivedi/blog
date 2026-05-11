@@ -13,7 +13,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full max-w-full min-w-0 overflow-x-hidden border-b border-outline-variant bg-background">
-      <div className="flex w-full max-w-container-max mx-auto items-center justify-center px-margin-page py-5 md:justify-between">
+      <div className="flex w-full items-center justify-center px-margin-page py-5 md:justify-between">
         {/* Logo — centered on mobile (in-flow), left on desktop */}
         <Link
           to="/"

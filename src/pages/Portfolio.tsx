@@ -56,45 +56,46 @@ export default function PortfolioPage() {
                   alt={project.title}
                 />
               </div>
-              <div className="flex justify-between items-start">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0">
                   <h3 className="text-headline-sm mb-2 group-hover:italic transition-all">{project.title}</h3>
-                  <p className="text-secondary text-body-md italic">{project.desc}</p>
+                  <p className="text-body-md italic text-secondary break-words">{project.desc}</p>
                 </div>
-                <span className="text-label-caps pt-2">{project.year}</span>
+                <span className="shrink-0 text-label-caps pt-0 sm:pt-2">{project.year}</span>
               </div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Expertise */}
+      {/* Expertise — two-column stack + milestones as separate rows (milestones must not live inside the 2-col grid or columns overlap on mobile) */}
       <section className="mb-section-gap">
         <div className="grid grid-cols-12 gap-8 border-t border-tertiary pt-16">
           <div className="col-span-12 lg:col-span-4">
             <h2 className="text-headline-lg leading-tight font-serif italic text-tertiary">Technical <br/>Stack</h2>
           </div>
-          <div className="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-y-16 gap-x-8">
-            <div className="border-l border-outline-variant pl-8">
-              <h4 className="text-label-caps text-secondary mb-6">MACHINE LEARNING</h4>
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span><span className="text-body-md">LLM Deployment (Production)</span></li>
-                <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span><span className="text-body-md">Fine-tuning Pipelines</span></li>
-                <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span><span className="text-body-md">Multimodal Benchmarking</span></li>
-                <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-tertiary rounded-full"></span><span className="text-body-md">Live AI Judges & Tournament Apps</span></li>
-              </ul>
+          <div className="col-span-12 flex min-w-0 flex-col gap-16 lg:col-span-8">
+            <div className="grid min-w-0 grid-cols-1 gap-12 md:grid-cols-2 md:gap-x-8 md:gap-y-0">
+              <div className="min-w-0 border-l border-outline-variant pl-6 sm:pl-8">
+                <h4 className="text-label-caps text-secondary mb-6">MACHINE LEARNING</h4>
+                <ul className="space-y-4">
+                  <li className="flex min-w-0 items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-tertiary" /><span className="min-w-0 break-words text-body-md">LLM Deployment (Production)</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-tertiary" /><span className="min-w-0 break-words text-body-md">Fine-tuning Pipelines</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-tertiary" /><span className="min-w-0 break-words text-body-md">Multimodal Benchmarking</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-tertiary" /><span className="min-w-0 break-words text-body-md">Live AI Judges & Tournament Apps</span></li>
+                </ul>
+              </div>
+              <div className="min-w-0 border-l border-outline-variant pl-6 sm:pl-8">
+                <h4 className="text-label-caps text-secondary mb-6">PHILOSOPHY & LEADERSHIP</h4>
+                <ul className="space-y-4">
+                  <li className="flex min-w-0 items-start gap-3"><Square size={10} className="mt-1 shrink-0 text-tertiary" /><span className="min-w-0 break-words text-body-md">ML Domain Lead @ MLSA KIIT</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><Square size={10} className="mt-1 shrink-0 text-tertiary" /><span className="min-w-0 break-words text-body-md">Technical Teaching & Community</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><Square size={10} className="mt-1 shrink-0 text-tertiary" /><span className="min-w-0 break-words text-body-md">Stoic Grounding (Marcus Aurelius)</span></li>
+                  <li className="flex min-w-0 items-start gap-3"><Square size={10} className="mt-1 shrink-0 text-tertiary" /><span className="min-w-0 break-words text-body-md">Strategic Thinking (F1 & Cricket)</span></li>
+                </ul>
+              </div>
             </div>
-            <div className="border-l border-outline-variant pl-8">
-              <h4 className="text-label-caps text-secondary mb-6">PHILOSOPHY & LEADERSHIP</h4>
-              <ul className="space-y-4">
-                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">ML Domain Lead @ MLSA KIIT</span></li>
-                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Technical Teaching & Community</span></li>
-                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Stoic Grounding (Marcus Aurelius)</span></li>
-                <li className="flex items-center gap-3"><Square size={10} className="text-tertiary"/><span className="text-body-md">Strategic Thinking (F1 & Cricket)</span></li>
-              </ul>
-            </div>
-            
-            <div className="col-span-12 border-t border-outline-variant pt-16 mt-8">
+            <div className="min-w-0 border-t border-outline-variant pt-12">
               <h4 className="text-label-caps text-secondary mb-8">MILESTONES</h4>
               <div className="space-y-8">
                 {milestones.map((milestone, idx) => (
@@ -107,11 +108,18 @@ export default function PortfolioPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="mb-section-gap py-32 bg-background border border-outline-variant text-left px-12">
-        <h2 className="text-display italic mb-12 text-tertiary"> लखनऊ to the world.</h2>
-        <div className="flex justify-start gap-8">
-          <a href="mailto:hello@kartikeya.build" className="border-b border-tertiary pb-2 text-label-caps hover:opacity-70 transition-opacity">hello@kartikeya.build</a>
-          <a href="#" className="border-b border-tertiary pb-2 text-label-caps hover:opacity-70 transition-opacity">LINKEDIN</a>
+      <section className="mb-section-gap border border-outline-variant bg-background px-margin-page py-20 text-left sm:py-32 sm:px-12">
+        <h2 className="text-display mb-10 text-tertiary italic sm:mb-12"> लखनऊ to the world.</h2>
+        <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-10 sm:gap-y-4">
+          <a
+            href="mailto:hello@kartikeya.build"
+            className="w-fit max-w-full break-all border-b border-tertiary pb-2 text-label-caps tracking-[0.12em] hover:opacity-70 sm:break-normal sm:tracking-[0.15em]"
+          >
+            hello@kartikeya.build
+          </a>
+          <a href="#" className="w-fit shrink-0 border-b border-tertiary pb-2 text-label-caps tracking-[0.15em] hover:opacity-70">
+            LINKEDIN
+          </a>
         </div>
       </section>
     </motion.div>

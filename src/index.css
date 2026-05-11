@@ -92,7 +92,7 @@
 
 /* Technical Writing Enhancements */
 .markdown-content {
-  @apply scroll-smooth;
+  @apply scroll-smooth min-w-0 max-w-full;
 }
 
 .markdown-content sup {

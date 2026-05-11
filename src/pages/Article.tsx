@@ -216,7 +216,7 @@ export default function ArticlePage() {
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={() => setIsZenMode(true)}
             title="Enter Zen Mode"
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-tertiary text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:opacity-90 transition-all text-[11px] font-mono tracking-widest uppercase"
+            className="fixed bottom-6 left-4 z-40 flex items-center gap-2 rounded-full bg-tertiary py-2.5 pl-3 pr-4 text-[11px] font-mono uppercase tracking-widest text-white shadow-lg transition-all hover:opacity-90 md:left-auto md:right-6"
           >
             <Minimize2 size={14} />
             <span className="hidden sm:inline">Zen</span>
@@ -281,20 +281,23 @@ export default function ArticlePage() {
             <button onClick={() => handleShare('copy')} className="p-1.5 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={16} /></button>
           </div>
         </div>
+      </section>
 
-        {/* Hero image */}
-        {post.image && (
-          <div className="w-full aspect-square sm:aspect-[4/3] lg:aspect-[21/9] overflow-hidden mb-8 sm:mb-16">
+      {/* Hero image — full viewport width (outside padded column) */}
+      {post.image && (
+        <section className="mb-8 w-full min-w-0 sm:mb-16" aria-label="Article cover">
+          <div className="aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9]">
             <img
               alt={post.title}
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
+              decoding="async"
+              className="block h-full w-full object-cover"
               src={post.image}
             />
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Article body + TOC */}
       <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative">
@@ -345,7 +348,7 @@ export default function ArticlePage() {
         </aside>
 
         {/* Article content */}
-        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap min-w-0">
+        <article className="col-span-12 mb-section-gap min-w-0 max-w-full break-words pb-24 sm:pb-20 lg:col-span-8 lg:col-start-5">
           {post.excerpt && (
             <p className="font-serif italic text-[20px] sm:text-[24px] leading-[1.55] text-secondary mb-10 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
               {post.excerpt}
