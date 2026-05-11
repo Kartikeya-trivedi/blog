@@ -283,10 +283,10 @@ export default function ArticlePage() {
         </div>
       </section>
 
-      {/* Hero image — full viewport width (outside padded column) */}
+      {/* Hero image — full viewport width on mobile, constrained on desktop */}
       {post.image && (
-        <section className="mb-8 w-full min-w-0 sm:mb-16" aria-label="Article cover">
-          <div className="aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9]">
+        <section className="mb-8 w-full min-w-0 sm:mb-16 lg:max-w-container-max lg:mx-auto lg:px-margin-page" aria-label="Article cover">
+          <div className="aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9] lg:rounded-lg">
             <img
               alt={post.title}
               loading="lazy"

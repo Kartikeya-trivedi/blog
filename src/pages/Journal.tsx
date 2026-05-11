@@ -45,9 +45,9 @@ export default function JournalPage() {
 
   return (
     <>
-      {/* Full-bleed hero — same width as the nav bar, not the narrow text column */}
-      <section className="mt-8 w-full min-w-0 sm:mt-16" aria-label="Featured visual">
-        <div className="relative aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9] grayscale transition-[filter] duration-700 hover:grayscale-0">
+      {/* Full-bleed hero on mobile, constrained on desktop */}
+      <section className="mt-8 w-full min-w-0 sm:mt-16 lg:max-w-container-max lg:mx-auto lg:px-margin-page" aria-label="Featured visual">
+        <div className="relative aspect-square w-full min-w-0 overflow-hidden sm:aspect-[4/3] lg:aspect-[21/9] grayscale transition-[filter] duration-700 hover:grayscale-0 lg:rounded-lg">
           <img
             alt="Featured post"
             loading="lazy"

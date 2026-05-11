@@ -187,14 +187,22 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-8 space-y-3">{children}</ol>,
           li: ({ children }) => <li className="text-body-lg text-on-surface/90">{children}</li>,
           table: ({ children }) => (
-            <div className="my-12 min-w-0 w-full max-w-full overflow-x-auto">
-              <table className="min-w-full border-collapse border border-outline-variant font-sans text-sm">
+            <div className="my-12 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-outline-variant">
+              <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm">
                 {children}
               </table>
             </div>
           ),
-          th: ({ children }) => <th className="min-w-0 break-words border border-outline-variant bg-surface-container px-3 py-3 text-left text-xs font-bold uppercase tracking-wider sm:px-4">{children}</th>,
-          td: ({ children }) => <td className="min-w-0 break-words border border-outline-variant px-3 py-3 sm:px-4">{children}</td>,
+          th: ({ children }) => (
+            <th className="border border-outline-variant bg-surface-container px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider sm:px-4 sm:text-xs">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="border border-outline-variant px-3 py-3 sm:px-4 leading-relaxed">
+              {children}
+            </td>
+          ),
           a: ({ children, href }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-black underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity">{children}</a>,
           img: ({ src, alt, title }) => (
             <figure className="my-10 w-full min-w-0 max-w-full sm:my-12">

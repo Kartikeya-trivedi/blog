@@ -48,7 +48,7 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
-      <div key={location.pathname} className="min-w-0 w-full max-w-full overflow-x-hidden">
+      <div key={location.pathname} className="min-w-0 w-full max-w-full">
         <Routes location={location}>
           {/* Public routes */}
           <Route path="/" element={<JournalPage />} />
