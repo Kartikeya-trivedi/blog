@@ -125,7 +125,7 @@ export default function ArticlePage() {
         )}
 
         <motion.h1 
-          className="text-display max-w-[900px] mb-12 sm:text-7xl"
+          className="font-serif leading-[1.1] tracking-[-0.02em] font-normal text-[36px] sm:text-[56px] lg:text-[72px] max-w-[900px] mb-8 sm:mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -133,17 +133,17 @@ export default function ArticlePage() {
           {post.title}
         </motion.h1>
 
-        <div className="flex flex-wrap justify-between items-start md:items-end gap-8 mb-12 border-b border-outline-variant pb-8">
-          <div className="flex gap-12">
-            <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-6 mb-8 sm:mb-12 border-b border-outline-variant pb-6 sm:pb-8">
+          <div className="flex flex-wrap gap-8 sm:gap-12">
+            <div className="flex flex-col gap-1.5">
               <span className="text-label-caps text-secondary text-[10px]">AUTHOR</span>
               <span className="text-body-md text-tertiary font-medium">{post.author}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <span className="text-label-caps text-secondary text-[10px]">DATE</span>
               <span className="text-body-md text-tertiary font-medium">{post.date}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <span className="text-label-caps text-secondary text-[10px]">READ TIME</span>
               <span className="text-body-md text-tertiary font-medium flex items-center gap-1.5">
                 <Clock size={16} /> {calculateReadTime(post.content)} MIN
@@ -151,8 +151,8 @@ export default function ArticlePage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <span className="text-label-caps text-secondary text-[10px] mr-2">SHARE</span>
+          <div className="flex items-center gap-3">
+            <span className="text-label-caps text-secondary text-[10px] mr-1">SHARE</span>
             <button onClick={() => handleShare('twitter')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Twitter size={18} /></button>
             <button onClick={() => handleShare('linkedin')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><Linkedin size={18} /></button>
             <button onClick={() => handleShare('copy')} className="p-2 hover:bg-surface-container rounded-full transition-colors"><LinkIcon size={18} /></button>
@@ -160,7 +160,7 @@ export default function ArticlePage() {
         </div>
 
         {post.image && (
-          <div className="w-full aspect-[21/9] overflow-hidden mb-16">
+          <div className="w-full aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] overflow-hidden mb-10 sm:mb-16">
             <img 
               alt={post.title} 
               loading="lazy"
@@ -172,7 +172,7 @@ export default function ArticlePage() {
         )}
       </section>
 
-      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-12 relative">
+      <div className="max-w-container-max mx-auto px-margin-page grid grid-cols-12 gap-8 lg:gap-12 relative overflow-hidden">
         {/* TOC Sidebar */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
           <div className="border-l border-outline-variant pl-8 py-2">
@@ -221,7 +221,7 @@ export default function ArticlePage() {
           </div>
         </aside>
 
-        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap">
+        <article className="col-span-12 lg:col-span-8 lg:col-start-5 mb-section-gap min-w-0">
           <div className="prose-container">
             {post.excerpt && (
               <p className="text-headline-md italic font-serif text-secondary mb-12 border-l-4 border-outline-variant pl-8 py-2 leading-relaxed">
