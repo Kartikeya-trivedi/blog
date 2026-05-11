@@ -56,7 +56,7 @@
 
 @media (max-width: 768px) {
   :root {
-    --spacing-margin-page: 0px;
+    --spacing-margin-page: 12px;
     --spacing-section-gap: 64px;
   }
   .text-display {
