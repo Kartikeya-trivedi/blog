@@ -21,8 +21,24 @@
 }
 
 @layer base {
+  html {
+    margin: 0;
+    max-width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-on-surface font-sans antialiased text-left;
+    margin: 0;
+    max-width: 100%;
+  }
+
+  #root {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 }
 
@@ -61,17 +77,6 @@
   }
   .text-display {
     @apply text-[40px];
-  }
-
-  /* Prevent horizontal blowout — clip on html + body so in-app browsers center correctly */
-  html {
-    width: 100%;
-    overflow-x: clip;
-  }
-
-  body {
-    width: 100%;
-    overflow-x: clip;
   }
 
   /* Code blocks scroll instead of blowing out */

@@ -44,32 +44,20 @@ export default function JournalPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="mx-auto w-full min-w-0 max-w-container-max px-margin-page"
-    >
-      {/* Hero Featured Post */}
-      <section className="mt-16 mb-section-gap">
-        <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-12">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="relative mb-8 aspect-square w-full max-w-full min-w-0 overflow-hidden sm:mb-12 sm:aspect-[4/3] lg:aspect-[21/9]"
-            >
-              <img 
-                alt="Featured post" 
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="h-full w-full max-w-full object-cover filter grayscale transition-all duration-1000 hover:grayscale-0" 
-                src="/chair.jpeg" 
-              />
-            </motion.div>
-          </div>
-          <div className="col-span-12 md:col-start-3 md:col-span-8 text-center">
+    <div className="mx-auto box-border w-full min-w-0 max-w-container-max px-margin-page">
+      {/* Hero Featured Post — single column (no 12-col grid) so mobile width cannot overshoot */}
+      <section className="mt-16 mb-section-gap w-full min-w-0">
+        <div className="relative mb-8 aspect-square w-full min-w-0 overflow-hidden sm:mb-12 sm:aspect-[4/3] lg:aspect-[21/9] grayscale transition-[filter] duration-700 hover:grayscale-0">
+          <img
+            alt="Featured post"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            decoding="async"
+            className="block h-full w-full max-w-full object-cover"
+            src="/chair.jpeg"
+          />
+        </div>
+        <div className="w-full min-w-0 text-center md:mx-auto md:max-w-[66.666667%]">
 
             <h1 className="text-display mb-8">Building Something That Actually Matters: A Systems Approach to Life and ML.</h1>
             <p className="text-body-lg text-secondary mb-10 max-w-2xl mx-auto italic font-serif">
@@ -81,7 +69,6 @@ export default function JournalPage() {
             >
               The Full Perspective
             </Link>
-          </div>
         </div>
       </section>
 
@@ -143,7 +130,7 @@ export default function JournalPage() {
           </div>
           
           <div className="space-y-0">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="sync">
               {loading ? (
                 <div className="py-24 text-center text-label-caps animate-pulse">RECOVERING DATA FROM CLOUD ARCHIVE...</div>
               ) : filteredPosts.length === 0 ? (
@@ -158,7 +145,6 @@ export default function JournalPage() {
                 filteredPosts.map((article) => (
                   <motion.div
                     key={article.id}
-                    layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -235,6 +221,6 @@ export default function JournalPage() {
           </div>
         </aside>
       </section>
-    </motion.div>
+    </div>
   );
 }
