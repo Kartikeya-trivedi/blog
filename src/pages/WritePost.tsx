@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
 import { cn } from '@/src/lib/utils';
-import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2, Type, TableOfContents, Upload, Link2, X, Wand2, Maximize, Minimize, History, BarChart2, Clock, Check, RefreshCw } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Save, ArrowLeft, Image as ImageIcon, Eye, Info, AlertTriangle, Lightbulb, Sigma, Share2, Type, TableOfContents, Upload, Link2, X, Wand2, Maximize, Minimize, History, BarChart2, Clock, Check, RefreshCw, Monitor, Smartphone, ChevronUp, ChevronDown, Layout } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { MarkdownRenderer } from '@/src/components/MarkdownRenderer';
 
@@ -16,7 +16,14 @@ export default function WritePostPage() {
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [viewMode, setViewMode] = useState<'edit' | 'preview' | 'split'>('edit');
-  const [stats, setStats] = useState({ words: 0, time: 0 });
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [stats, setStats] = useState({ 
+    words: 0, 
+    time: 0, 
+    titleLength: 0, 
+    totalImages: 0, 
+    imagesWithAlt: 0 
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [showSeo, setShowSeo] = useState(false);
@@ -25,6 +32,9 @@ export default function WritePostPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [revisions, setRevisions] = useState<BlogPost[]>([]);
   const [showRevisions, setShowRevisions] = useState(false);
+  const [showStructure, setShowStructure] = useState(false);
+  const [diffMode, setDiffMode] = useState(false);
+  const [diffRevision, setDiffRevision] = useState<BlogPost | null>(null);
   const [scheduleDate, setScheduleDate] = useState('');
   
   // Undo/Redo History
@@ -290,14 +300,54 @@ export default function WritePostPage() {
 
   useEffect(() => {
     const words = post.content.trim() ? post.content.trim().split(/\s+/).length : 0;
-    const time = Math.max(1, Math.ceil(words / 200)); 
-    setStats({ words, time });
-  }, [post.content]);
+    const time = Math.ceil(words / 200);
+    const titleLength = post.title.length;
+    
+    // Count images and alt text
+    const imgMatches = [...post.content.matchAll(/!\[(.*?)\]\((.*?)\)/g)];
+    const imagesWithAlt = imgMatches.filter(m => m[1].trim().length > 0).length;
+    const totalImages = imgMatches.length;
+
+    setStats({ 
+      words, 
+      time, 
+      titleLength, 
+      totalImages, 
+      imagesWithAlt 
+    });
+  }, [post.content, post.title]);
+
+  const generateDiff = (oldText: string, newText: string) => {
+    const oldWords = oldText.split(/(\s+)/);
+    const newWords = newText.split(/(\s+)/);
+    let i = 0, j = 0;
+    let result = '';
+
+    while (i < oldWords.length || j < newWords.length) {
+      if (i < oldWords.length && j < newWords.length && oldWords[i] === newWords[j]) {
+        result += oldWords[i];
+        i++; j++;
+      } else {
+        if (i < oldWords.length && !newWords.includes(oldWords[i], j)) {
+          result += `<del class="bg-red-100 text-red-800 px-0.5 line-through decoration-red-500">${oldWords[i]}</del>`;
+          i++;
+        } else if (j < newWords.length) {
+          result += `<ins class="bg-green-100 text-green-800 px-0.5 no-underline decoration-green-500">${newWords[j]}</ins>`;
+          j++;
+        } else {
+          i++; j++;
+        }
+      }
+    }
+    return result;
+  };
 
   const restoreRevision = (rev: any) => {
     if (confirm('Restore this revision? Your current draft will be overwritten.')) {
       setPost(rev);
+      setLastSavedContent(rev.content);
       setShowRevisions(false);
+      setDiffMode(false);
     }
   };
 
@@ -314,43 +364,80 @@ export default function WritePostPage() {
       return;
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    // Split content by headings (h1, h2, h3)
+    const sections: { heading: string; content: string }[] = [];
+    const lines = post.content.split('\n');
+    let currentSection: { heading: string; content: string } | null = null;
+
+    lines.forEach(line => {
+      if (line.match(/^#{1,3}\s+/)) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = { heading: line, content: '' };
+      } else {
+        if (!currentSection) currentSection = { heading: '', content: '' };
+        currentSection.content += line + '\n';
+      }
+    });
+    if (currentSection) sections.push(currentSection);
+
+    if (direction === 'up' && index > 0) {
+      [sections[index], sections[index - 1]] = [sections[index - 1], sections[index]];
+    } else if (direction === 'down' && index < sections.length - 1) {
+      [sections[index], sections[index + 1]] = [sections[index + 1], sections[index]];
+    }
+
+    const newContent = sections.map(s => (s.heading ? s.heading + '\n' : '') + s.content.trim()).join('\n\n');
+    setPost(prev => ({ ...prev, content: newContent }));
+  };
+
+  const handleAiAction = async (actionType: 'grammar' | 'rephrase' | 'custom' | 'tags' | 'excerpt') => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       alert("GEMINI_API_KEY is not defined in environment variables.");
       return;
     }
 
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart || 0;
+    const end = textarea?.selectionEnd || 0;
+    const selection = textarea?.value.substring(start, end) || '';
+
     setIsAiLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
       let prompt = '';
       if (actionType === 'grammar') {
-        prompt = `Fix any grammatical errors in the following text, return ONLY the corrected text with no extra commentary:\n\n${selection}`;
+        prompt = `Fix any grammatical errors in the following text, return ONLY the corrected text with no extra commentary:\n\n${selection || post.content}`;
       } else if (actionType === 'rephrase') {
-        prompt = `Rephrase the following text to flow better and sound more professional. Return ONLY the new text with no extra commentary:\n\n${selection}`;
+        prompt = `Rephrase the following text to flow better and sound more professional. Return ONLY the new text with no extra commentary:\n\n${selection || post.content}`;
+      } else if (actionType === 'tags') {
+        prompt = `Suggest exactly 5 relevant tags for the following blog post title and content. Return only the tags as a comma-separated list, no other text:\nTitle: ${post.title}\nContent: ${post.content}`;
+      } else if (actionType === 'excerpt') {
+        prompt = `Write a compelling 2-sentence summary (excerpt) for the following blog post. Return only the summary text, no other text:\nTitle: ${post.title}\nContent: ${post.content}`;
       } else {
         prompt = `${aiPrompt}\n\n${selection ? 'Text: ' + selection : ''}`;
       }
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const resultText = response.text().trim();
 
-      const resultText = response.text || '';
-      
-      if (resultText) {
-        if (selection) {
-          const newContent = post.content.substring(0, start) + resultText + post.content.substring(end);
-          setHistory(prev => ({
-            past: [...prev.past, post.content].slice(-50),
+      if (actionType === 'tags') {
+        const newTags = resultText.split(',').map(t => t.trim()).filter(t => t);
+        setPost(prev => ({ ...prev, tags: [...new Set([...prev.tags, ...newTags])] }));
+      } else if (actionType === 'excerpt') {
+        setPost(prev => ({ ...prev, excerpt: resultText }));
+      } else {
+        if (!selection) {
+          setHistory(h => ({
+            past: [...h.past, post.content].slice(-50),
             future: []
           }));
-          setLastSavedContent(newContent);
-          setPost(prev => ({
-            ...prev,
-            content: newContent
-          }));
+          setLastSavedContent(resultText);
+          setPost(prev => ({ ...prev, content: resultText }));
         } else {
           insertText(resultText, '');
         }
@@ -574,6 +661,25 @@ export default function WritePostPage() {
                 <button onClick={() => setViewMode('split')} className={cn("px-4 py-1.5 text-label-caps text-[10px] transition-all", viewMode === 'split' ? "bg-tertiary text-white" : "hover:bg-surface-container")}>Split</button>
                 <button onClick={() => setViewMode('preview')} className={cn("px-4 py-1.5 text-label-caps text-[10px] transition-all", viewMode === 'preview' ? "bg-tertiary text-white" : "hover:bg-surface-container")}>Preview</button>
               </div>
+
+              {(viewMode === 'preview' || viewMode === 'split') && (
+                <div className="flex border border-outline-variant rounded p-0.5 mr-2">
+                  <button 
+                    onClick={() => setPreviewDevice('desktop')} 
+                    className={cn("p-1.5 transition-all", previewDevice === 'desktop' ? "bg-tertiary text-white rounded-[2px]" : "hover:bg-surface-container text-secondary")}
+                    title="Desktop Preview"
+                  >
+                    <Monitor size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setPreviewDevice('mobile')} 
+                    className={cn("p-1.5 transition-all", previewDevice === 'mobile' ? "bg-tertiary text-white rounded-[2px]" : "hover:bg-surface-container text-secondary")}
+                    title="Mobile Preview"
+                  >
+                    <Smartphone size={14} />
+                  </button>
+                </div>
+              )}
               <div className="flex items-center border border-outline-variant rounded p-0.5 mr-4">
                 <input type="datetime-local" className="bg-transparent text-[10px] uppercase font-mono px-2 outline-none text-secondary" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
                 <button 
@@ -711,7 +817,17 @@ export default function WritePostPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="flex flex-col gap-2">
-            <label className="text-label-caps text-secondary text-[10px]">TAGS (COMMA SEPARATED)</label>
+            <div className="flex justify-between items-center">
+              <label className="text-label-caps text-secondary text-[10px]">TAGS (COMMA SEPARATED)</label>
+              <button 
+                onClick={() => handleAiAction('tags')}
+                className="text-[9px] font-mono text-purple-600 flex items-center gap-1 hover:opacity-70 transition-all"
+                title="AI Suggest Tags"
+                disabled={isAiLoading}
+              >
+                <Wand2 size={10} /> Suggest Tags
+              </button>
+            </div>
             <input 
               type="text" 
               placeholder="Gen AI, Formula 1, Strategy..."
@@ -755,7 +871,17 @@ export default function WritePostPage() {
         </div>
 
         <div>
-           <label className="text-label-caps text-secondary text-[10px] block mb-2">EXCERPT / SUBTITLE</label>
+           <div className="flex justify-between items-center mb-2">
+             <label className="text-label-caps text-secondary text-[10px] block">EXCERPT / SUBTITLE</label>
+             <button 
+                onClick={() => handleAiAction('excerpt')}
+                className="text-[9px] font-mono text-purple-600 flex items-center gap-1 hover:opacity-70 transition-all"
+                title="AI Write Excerpt"
+                disabled={isAiLoading}
+              >
+                <Wand2 size={10} /> AI Write Excerpt
+              </button>
+           </div>
            <textarea 
             placeholder="A brief summary..."
             className="w-full bg-surface-container border-0 p-4 text-body-md italic font-serif min-h-[80px]"
@@ -817,6 +943,7 @@ export default function WritePostPage() {
                   <ToolbarButton icon={<Type size={14} />} onClick={() => insertText('<div class="caption">', '</div>')} title="Add Caption" />
                   <ToolbarButton icon={<Share2 size={14} />} onClick={() => insertText('```mermaid\ngraph TD;\n  A-->B;\n```', '')} title="Mermaid Diagram" />
                   <ToolbarButton icon={<TableOfContents size={14} />} onClick={insertToc} title="Insert Table of Contents" />
+                  <ToolbarButton icon={<Layout size={14} />} onClick={() => setShowStructure(true)} title="Manage Sections (Drag & Drop)" />
                   <div className="w-[1px] h-4 bg-outline-variant self-center mx-1" />
                   <ToolbarButton icon={<Link2 size={14} />} onClick={() => insertText('[', '](url)')} title="Insert Link" />
                   <ToolbarButton icon={<ImageIcon size={14} />} onClick={() => fileInputRef.current?.click()} title="Insert Image" />
@@ -880,10 +1007,29 @@ export default function WritePostPage() {
             
             {(viewMode === 'preview' || viewMode === 'split') && (
               <div className={cn(
-                "bg-white border border-outline-variant p-12 overflow-y-auto relative",
-                viewMode === 'split' ? "h-full" : "min-h-[600px]"
+                "bg-white border border-outline-variant transition-all duration-500 overflow-y-auto relative mx-auto shadow-inner",
+                viewMode === 'split' ? "h-full" : "min-h-[600px]",
+                previewDevice === 'mobile' ? "w-[375px] h-[667px] my-8 rounded-[40px] border-[12px] border-[#1a1a1a] p-6 no-scrollbar" : "w-full p-12"
               )}>
-                <MarkdownRenderer content={post.content || '_No content written yet._'} />
+                {previewDevice === 'mobile' && <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-1 bg-[#333] rounded-full z-20" />}
+                
+                {diffMode && diffRevision ? (
+                  <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="flex justify-between items-center bg-amber-50 border border-amber-200 p-4 mb-8">
+                      <div className="text-[10px] font-mono text-amber-800">
+                        <span className="font-bold uppercase tracking-widest">COMPARING WITH REVISION:</span> {diffRevision.date}
+                      </div>
+                      <button onClick={() => setDiffMode(false)} className="text-[10px] bg-amber-200 text-amber-900 px-3 py-1 hover:bg-amber-300">Exit Compare</button>
+                    </div>
+                    <div className="prose prose-sm max-w-none">
+                       <div dangerouslySetInnerHTML={{ __html: generateDiff(diffRevision.content, post.content) }} className="font-sans leading-relaxed whitespace-pre-wrap" />
+                    </div>
+                  </div>
+                ) : (
+                  <MarkdownRenderer content={post.content || '_No content written yet._'} />
+                )}
+
+                {previewDevice === 'mobile' && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 border-2 border-[#333] rounded-full z-20" />}
               </div>
             )}
         </div>
@@ -913,7 +1059,7 @@ export default function WritePostPage() {
             
             <div className="bg-white p-4 border border-outline-variant rounded">
                <h4 className="text-[10px] font-mono text-secondary mb-2">GOOGLE SNIPPET PREVIEW</h4>
-               <div className="space-y-1">
+               <div className="space-y-1 mb-4">
                  <div className="text-[12px] text-[#1a0dab] truncate hover:underline cursor-pointer">
                    {post.title || 'Untitled Article'}
                  </div>
@@ -922,6 +1068,27 @@ export default function WritePostPage() {
                  </div>
                  <div className="text-[11px] text-[#545454] line-clamp-2 leading-snug">
                    {post.date} - {post.excerpt || post.content.replace(/[#*`_]/g, '').slice(0, 150) || 'Write an excerpt or content to see snippet preview...'}
+                 </div>
+               </div>
+               
+               <div className="pt-4 border-t border-outline-variant space-y-3">
+                 <div className="flex justify-between items-center text-[10px]">
+                   <span className="text-secondary">Title Length</span>
+                   <span className={cn("font-bold", stats.titleLength >= 50 && stats.titleLength <= 60 ? "text-green-600" : "text-amber-600")}>
+                     {stats.titleLength} / 60
+                   </span>
+                 </div>
+                 <div className="flex justify-between items-center text-[10px]">
+                   <span className="text-secondary">Image Alt Text</span>
+                   <span className={cn("font-bold", stats.imagesWithAlt === stats.totalImages && stats.totalImages > 0 ? "text-green-600" : "text-amber-600")}>
+                     {stats.imagesWithAlt} / {stats.totalImages}
+                   </span>
+                 </div>
+                 <div className="flex justify-between items-center text-[10px]">
+                   <span className="text-secondary">Word Count</span>
+                   <span className={cn("font-bold", stats.words >= 300 ? "text-green-600" : "text-secondary")}>
+                     {stats.words} words
+                   </span>
                  </div>
                </div>
             </div>
@@ -940,6 +1107,62 @@ export default function WritePostPage() {
         </motion.div>
       )}
 
+      {/* Section Manager Modal */}
+        {showStructure && (
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-8 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-background border border-outline-variant w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl"
+            >
+              <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container">
+                <h3 className="text-label-caps tracking-[0.2em] font-bold">ARTICLE STRUCTURE</h3>
+                <button onClick={() => setShowStructure(false)} className="text-secondary hover:text-tertiary transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <p className="text-[10px] font-mono text-secondary uppercase mb-4">Reorder sections by moving them up or down. Sections are identified by # headings.</p>
+                {post.content.split('\n').filter(l => l.match(/^#{1,3}\s+/)).map((heading, i, arr) => (
+                  <div key={i} className="flex items-center gap-4 p-4 bg-surface-container border border-outline-variant group hover:border-tertiary transition-all">
+                    <div className="flex-1">
+                      <div className="text-[10px] font-mono text-tertiary/50 mb-1">SECTION {i + 1}</div>
+                      <div className="text-sm font-bold font-serif">{heading.replace(/^#+\s+/, '')}</div>
+                      <div className="text-[9px] font-mono text-secondary mt-1 uppercase tracking-tighter opacity-50">{(heading.match(/^#+/) || [''])[0].length === 1 ? 'Main Heading' : 'Sub Heading'}</div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <button 
+                        disabled={i === 0}
+                        onClick={() => moveSection(i, 'up')}
+                        className="p-2 hover:bg-outline-variant rounded transition-colors disabled:opacity-20"
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <button 
+                        disabled={i === arr.length - 1}
+                        onClick={() => moveSection(i, 'down')}
+                        className="p-2 hover:bg-outline-variant rounded transition-colors disabled:opacity-20"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {post.content.split('\n').filter(l => l.match(/^#{1,3}\s+/)).length === 0 && (
+                   <div className="text-center py-12 text-secondary text-sm italic">
+                     No headings found. Add some # Headings to use the section manager.
+                   </div>
+                )}
+              </div>
+              <div className="p-6 border-t border-outline-variant bg-surface-container text-right">
+                <button onClick={() => setShowStructure(false)} className="px-8 py-2 bg-tertiary text-white text-label-caps hover:opacity-90 transition-all">
+                  Done Reordering
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
       {/* Revisions Modal */}
       {showRevisions && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
@@ -950,12 +1173,29 @@ export default function WritePostPage() {
             <div className="space-y-4">
               {revisions.length === 0 ? <p className="text-sm">No revisions saved yet.</p> : null}
               {revisions.map((rev, i) => (
-                <div key={i} className="border border-outline-variant p-4 hover:border-tertiary transition-all flex justify-between items-center group cursor-pointer" onClick={() => restoreRevision(rev)}>
-                  <div>
+                <div key={i} className="border border-outline-variant p-4 hover:border-tertiary transition-all flex justify-between items-center group cursor-pointer">
+                  <div className="flex-1" onClick={() => restoreRevision(rev)}>
                     <div className="font-bold text-tertiary">{rev.title || 'Untitled'}</div>
                     <div className="text-[10px] font-mono text-secondary mt-1">Saved at {(rev as any)._savedAt || 'Unknown time'}</div>
                   </div>
-                  <button className="text-[10px] bg-tertiary text-white px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity">Restore</button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setDiffRevision(rev);
+                        setDiffMode(true);
+                        setShowRevisions(false);
+                      }}
+                      className="text-[10px] bg-surface-container text-tertiary px-3 py-1 border border-outline-variant hover:bg-outline-variant transition-all"
+                    >
+                      Compare
+                    </button>
+                    <button 
+                      onClick={() => restoreRevision(rev)}
+                      className="text-[10px] bg-tertiary text-white px-3 py-1 hover:opacity-90 transition-opacity"
+                    >
+                      Restore
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

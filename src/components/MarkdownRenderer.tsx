@@ -188,8 +188,8 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-0 space-y-0">{children}</ol>,
           li: ({ children }) => <li className="text-body-lg text-on-surface/90 leading-snug">{children}</li>,
           table: ({ children }) => (
-            <div className="my-12 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-outline-variant">
-              <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm">
+            <div className="my-12 w-full overflow-x-auto cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-thumb-outline-variant pb-4">
+              <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm whitespace-nowrap">
                 {children}
               </table>
             </div>
