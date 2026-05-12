@@ -892,6 +892,7 @@ export default function WritePostPage() {
 
           </>
         )}
+      </div>
 
         <div className={cn("pt-8 transition-all", zenMode ? "pt-0" : "")}>
           {!zenMode && (
@@ -1033,6 +1034,7 @@ export default function WritePostPage() {
               </div>
             )}
         </div>
+      </div>
       </div>
       </div>
       
