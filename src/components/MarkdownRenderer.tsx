@@ -133,7 +133,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
   return (
     <div className="markdown-content min-w-0 break-words">
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex, rehypeRaw]}
         components={{
           code({ node, inline, className, children, ...props }) {
@@ -183,10 +183,10 @@ export function MarkdownRenderer({ content }: { content: string }) {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
             return <h3 id={id} className="text-headline-md mt-8 mb-3 scroll-mt-20">{children}</h3>;
           },
-          p: ({ children }) => <p className="text-body-lg mb-0 text-on-surface/90 leading-snug">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-0 space-y-0">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-0 space-y-0">{children}</ol>,
-          li: ({ children }) => <li className="text-body-lg text-on-surface/90 leading-snug">{children}</li>,
+          p: ({ children }) => <p className="text-body-lg mb-6 text-on-surface/90 leading-relaxed whitespace-pre-wrap">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-6 space-y-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-6 space-y-2">{children}</ol>,
+          li: ({ children }) => <li className="text-body-lg text-on-surface/90 leading-relaxed">{children}</li>,
           table: ({ children }) => (
             <div className="my-12 w-full overflow-x-auto cursor-grab active:cursor-grabbing scrollbar-thin scrollbar-thumb-outline-variant pb-4">
               <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm whitespace-nowrap">

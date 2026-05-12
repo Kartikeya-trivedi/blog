@@ -110,7 +110,8 @@
 }
 
 .markdown-content p {
-  @apply mb-0;
+  @apply mb-[1.5em] leading-relaxed;
+  white-space: pre-wrap;
 }
 
 .markdown-content sup {
