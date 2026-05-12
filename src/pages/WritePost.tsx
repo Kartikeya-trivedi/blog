@@ -790,7 +790,7 @@ export default function WritePostPage() {
 
           <div className={cn(
             "grid gap-8 transition-all duration-500",
-            viewMode === 'split' ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+            viewMode === 'split' ? "grid-cols-1 lg:grid-cols-2 h-[calc(100vh-300px)] min-h-[600px]" : "grid-cols-1"
           )}>
             {(viewMode === 'edit' || viewMode === 'split') && (
               <div className={cn("flex flex-col border border-outline-variant bg-surface-container overflow-hidden transition-all duration-300", zenMode && "fixed inset-0 z-[100] m-0 border-0 rounded-none bg-background")}>
@@ -859,14 +859,12 @@ export default function WritePostPage() {
                   )}
                 </div>
                 
-                <div className="relative group/editor">
+                <div className="relative group/editor flex-1 overflow-hidden">
                   <textarea 
                     ref={textareaRef}
                     placeholder="Begin your manifesto..."
                     className={cn(
-                      "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-normal font-mono text-sm focus:outline-none transition-all resize-y",
-                      "whitespace-pre-wrap [tab-size:4]",
-                      viewMode === 'split' ? "h-full" : "",
+                      "w-full bg-transparent border-0 p-8 text-body-lg h-full leading-snug font-mono text-sm focus:outline-none transition-all resize-none overflow-y-auto",
                       zenMode ? "max-w-[800px] mx-auto text-base p-16 h-screen" : ""
                     )}
                     value={post.content}
@@ -882,8 +880,8 @@ export default function WritePostPage() {
             
             {(viewMode === 'preview' || viewMode === 'split') && (
               <div className={cn(
-                "bg-white border border-outline-variant p-12 min-h-[600px] overflow-auto relative",
-                viewMode === 'split' ? "h-[600px] lg:h-auto" : ""
+                "bg-white border border-outline-variant p-12 overflow-y-auto relative",
+                viewMode === 'split' ? "h-full" : "min-h-[600px]"
               )}>
                 <MarkdownRenderer content={post.content || '_No content written yet._'} />
               </div>
@@ -922,7 +920,7 @@ export default function WritePostPage() {
                  <div className="text-[11px] text-[#006621] truncate flex items-center gap-1">
                    {post.canonicalUrl || 'https://yoursite.com/blog/...' }
                  </div>
-                 <div className="text-[11px] text-[#545454] line-clamp-2 leading-relaxed">
+                 <div className="text-[11px] text-[#545454] line-clamp-2 leading-snug">
                    {post.date} - {post.excerpt || post.content.replace(/[#*`_]/g, '').slice(0, 150) || 'Write an excerpt or content to see snippet preview...'}
                  </div>
                </div>

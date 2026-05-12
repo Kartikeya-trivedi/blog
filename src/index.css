@@ -139,7 +139,7 @@
 
 /* Zen mode article — slightly larger, looser type for deep reading */
 .zen-article-content p {
-  @apply text-[17px] sm:text-[19px] leading-[1.7];
+  @apply text-[17px] sm:text-[19px] leading-snug;
 }
 
 .zen-article-content h1,
@@ -149,6 +149,27 @@
 }
 
 /* Global overflow safety net */
+/* Custom minimalist scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* For Firefox */
 * {
-  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
 }
