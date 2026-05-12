@@ -351,18 +351,6 @@ export default function WritePostPage() {
     }
   };
 
-  const handleAiAction = async (actionType: 'grammar' | 'rephrase' | 'custom') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selection = post.content.substring(start, end);
-    
-    if (!selection && actionType !== 'custom') {
-      alert("Please select some text first to use AI editing.");
-      return;
-    }
 
   const moveSection = (index: number, direction: 'up' | 'down') => {
     // Split content by headings (h1, h2, h3)
@@ -1208,6 +1196,7 @@ export default function WritePostPage() {
       </motion.div>
     );
   }
+
 
 function ToolbarButton({ icon, onClick, title }: { icon: React.ReactNode, onClick: () => void, title: string }) {
   return (
