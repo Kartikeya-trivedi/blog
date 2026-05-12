@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
@@ -132,7 +133,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
   return (
     <div className="markdown-content min-w-0 break-words">
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
+        remarkPlugins={[remarkMath, remarkGfm, remarkBreaks]}
         rehypePlugins={[rehypeKatex, rehypeRaw]}
         components={{
           code({ node, inline, className, children, ...props }) {
@@ -182,10 +183,10 @@ export function MarkdownRenderer({ content }: { content: string }) {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
             return <h3 id={id} className="text-headline-md mt-12 mb-4 scroll-mt-20">{children}</h3>;
           },
-          p: ({ children }) => <p className="text-body-lg mb-8 text-on-surface/90 leading-relaxed">{children}</p>,
+          p: ({ children }) => <p className="text-body-lg mb-8 text-on-surface/90 leading-relaxed whitespace-pre-wrap">{children}</p>,
           ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-8 space-y-3">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-8 space-y-3">{children}</ol>,
-          li: ({ children }) => <li className="text-body-lg text-on-surface/90">{children}</li>,
+          li: ({ children }) => <li className="text-body-lg text-on-surface/90 whitespace-pre-wrap">{children}</li>,
           table: ({ children }) => (
             <div className="my-12 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-outline-variant">
               <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm">

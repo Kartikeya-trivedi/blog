@@ -102,15 +102,165 @@ export default function WritePostPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Ctrl+Z or Cmd+Z
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Undo/Redo
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
       undo();
+      return;
     }
-    // Ctrl+Y or Cmd+Y or Ctrl+Shift+Z
     if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')) {
       e.preventDefault();
       redo();
+      return;
+    }
+
+    // Formatting Shortcuts
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'b') {
+        e.preventDefault();
+        insertText('**', '**');
+      } else if (e.key === 'i') {
+        e.preventDefault();
+        insertText('*', '*');
+      } else if (e.key === 'k') {
+        e.preventDefault();
+        insertText('[', '](url)');
+      }
+    }
+
+    // Tab Handling
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+
+      if (start === end) {
+        // Single cursor - insert tab
+        const newContent = value.substring(0, start) + '    ' + value.substring(end);
+        setPost(prev => ({ ...prev, content: newContent }));
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 4;
+        }, 0);
+      } else {
+        // Multi-line selection - indent/outdent
+        const lines = value.split('\n');
+        const startLineIndex = value.substring(0, start).split('\n').length - 1;
+        const endLineIndex = value.substring(0, end).split('\n').length - 1;
+
+        const newLines = lines.map((line, i) => {
+          if (i >= startLineIndex && i <= endLineIndex) {
+            if (e.shiftKey) {
+              return line.startsWith('    ') ? line.substring(4) : line.startsWith('\t') ? line.substring(1) : line;
+            }
+            return '    ' + line;
+          }
+          return line;
+        });
+
+        const newContent = newLines.join('\n');
+        setPost(prev => ({ ...prev, content: newContent }));
+        
+        // Re-select the lines
+        setTimeout(() => {
+          const newStart = newLines.slice(0, startLineIndex).join('\n').length + (startLineIndex > 0 ? 1 : 0);
+          const newEnd = newLines.slice(0, endLineIndex + 1).join('\n').length;
+          textarea.setSelectionRange(newStart, newEnd);
+        }, 0);
+      }
+    }
+
+    // Smart Newlines (List continuation)
+    if (e.key === 'Enter') {
+      const start = textarea.selectionStart;
+      const lineStart = textarea.value.lastIndexOf('\n', start - 1) + 1;
+      const currentLine = textarea.value.substring(lineStart, start);
+      
+      const listMatch = currentLine.match(/^(\s*)([-*+]|\d+\.)\s+/);
+      const quoteMatch = currentLine.match(/^(\s*)>\s*/);
+      
+      if (listMatch || quoteMatch) {
+        const indent = listMatch ? listMatch[1] : quoteMatch![1];
+        const marker = listMatch ? listMatch[2] : '>';
+        
+        // If the line is empty (just the marker), remove it (end list/quote)
+        if (currentLine.trim() === marker) {
+          e.preventDefault();
+          const newContent = textarea.value.substring(0, lineStart) + '\n' + textarea.value.substring(start);
+          setPost(prev => ({ ...prev, content: newContent }));
+          return;
+        }
+
+        e.preventDefault();
+        let nextMarker = marker;
+        if (listMatch && /\d+\./.test(marker)) {
+          nextMarker = (parseInt(marker) + 1) + '.';
+        }
+        
+        const insertion = `\n${indent}${nextMarker} `;
+        const newContent = textarea.value.substring(0, start) + insertion + textarea.value.substring(start);
+        setPost(prev => ({ ...prev, content: newContent }));
+        
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + insertion.length;
+        }, 0);
+      }
+    }
+
+    // Auto-pairing
+    const pairs: Record<string, string> = {
+      '(': ')',
+      '[': ']',
+      '{': '}',
+      '"': '"',
+      "'": "'",
+      '`': '`',
+      '*': '*',
+      '_': '_',
+    };
+
+    if (pairs[e.key]) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selection = textarea.value.substring(start, end);
+
+      if (selection) {
+        // Wrap selection
+        e.preventDefault();
+        insertText(e.key, pairs[e.key]);
+      } else {
+        // Insert pair if not preceded by a letter (simple heuristic)
+        const charBefore = textarea.value.substring(start - 1, start);
+        if (!/[a-zA-Z0-9]/.test(charBefore) || ['"', "'", '`'].includes(e.key)) {
+          e.preventDefault();
+          const newContent = textarea.value.substring(0, start) + e.key + pairs[e.key] + textarea.value.substring(start);
+          setPost(prev => ({ ...prev, content: newContent }));
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+          }, 0);
+        }
+      }
+    }
+
+    // Handle backspace for pairs
+    if (e.key === 'Backspace') {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      if (start === end) {
+        const charBefore = textarea.value.substring(start - 1, start);
+        const charAfter = textarea.value.substring(start, start + 1);
+        if (pairs[charBefore] === charAfter) {
+          e.preventDefault();
+          const newContent = textarea.value.substring(0, start - 1) + textarea.value.substring(start + 1);
+          setPost(prev => ({ ...prev, content: newContent }));
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start - 1;
+          }, 0);
+        }
+      }
     }
   };
 
@@ -715,6 +865,7 @@ export default function WritePostPage() {
                     placeholder="Begin your manifesto..."
                     className={cn(
                       "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-relaxed font-mono text-sm focus:outline-none transition-all resize-y",
+                      "whitespace-pre-wrap [tab-size:4]",
                       viewMode === 'split' ? "h-full" : "",
                       zenMode ? "max-w-[800px] mx-auto text-base p-16 h-screen" : ""
                     )}
