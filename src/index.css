@@ -114,6 +114,12 @@
   white-space: pre-wrap;
 }
 
+.markdown-content table {
+  @apply border-collapse my-8;
+  width: max-content;
+  min-width: 100%;
+}
+
 .markdown-content sup {
   @apply text-tertiary font-bold px-0.5;
 }

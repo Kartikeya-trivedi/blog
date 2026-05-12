@@ -1212,7 +1212,11 @@ export default function WritePostPage() {
 function ToolbarButton({ icon, onClick, title }: { icon: React.ReactNode, onClick: () => void, title: string }) {
   return (
     <button
-      onClick={onClick}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
       title={title}
       className="p-2 hover:bg-surface-container-highest rounded text-secondary hover:text-tertiary transition-all"
     >
