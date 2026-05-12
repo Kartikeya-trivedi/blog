@@ -527,6 +527,7 @@ export default function WritePostPage() {
     }));
     setLastSavedContent(newContent);
 
+    const scrollTop = textarea.scrollTop;
     setPost(prev => ({
       ...prev,
       content: newContent
@@ -534,6 +535,7 @@ export default function WritePostPage() {
 
     setTimeout(() => {
       textarea.focus();
+      textarea.scrollTop = scrollTop;
       textarea.setSelectionRange(start + before.length, start + before.length + selection.length);
     }, 0);
   };

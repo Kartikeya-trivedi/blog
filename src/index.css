@@ -106,7 +106,7 @@
 
 /* Technical Writing Enhancements */
 .markdown-content {
-  @apply scroll-smooth min-w-0 max-w-full;
+  @apply min-w-0 max-w-full;
 }
 
 .markdown-content p {
