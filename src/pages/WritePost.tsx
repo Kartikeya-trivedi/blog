@@ -1203,11 +1203,9 @@ export default function WritePostPage() {
         </div>
       )}
 
-    </div>
-  </div>
-</motion.div>
-  );
-}
+      </motion.div>
+    );
+  }
 
 function ToolbarButton({ icon, onClick, title }: { icon: React.ReactNode, onClick: () => void, title: string }) {
   return (
