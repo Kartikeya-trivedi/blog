@@ -110,7 +110,7 @@
 }
 
 .markdown-content p {
-  white-space: pre-wrap;
+  @apply mb-0;
 }
 
 .markdown-content sup {

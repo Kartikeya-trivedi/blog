@@ -183,10 +183,10 @@ export function MarkdownRenderer({ content }: { content: string }) {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
             return <h3 id={id} className="text-headline-md mt-8 mb-3 scroll-mt-20">{children}</h3>;
           },
-          p: ({ children }) => <p className="text-body-lg mb-1 text-on-surface/90 leading-snug whitespace-pre-wrap">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-1 space-y-0">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-1 space-y-0">{children}</ol>,
-          li: ({ children }) => <li className="text-body-lg text-on-surface/90 whitespace-pre-wrap leading-snug">{children}</li>,
+          p: ({ children }) => <p className="text-body-lg mb-0 text-on-surface/90 leading-snug">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-0 space-y-0">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-0 space-y-0">{children}</ol>,
+          li: ({ children }) => <li className="text-body-lg text-on-surface/90 leading-snug">{children}</li>,
           table: ({ children }) => (
             <div className="my-12 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-outline-variant">
               <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm">
