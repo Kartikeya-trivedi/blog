@@ -864,7 +864,7 @@ export default function WritePostPage() {
                     ref={textareaRef}
                     placeholder="Begin your manifesto..."
                     className={cn(
-                      "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-relaxed font-mono text-sm focus:outline-none transition-all resize-y",
+                      "w-full bg-transparent border-0 p-8 text-body-lg min-h-[600px] leading-normal font-mono text-sm focus:outline-none transition-all resize-y",
                       "whitespace-pre-wrap [tab-size:4]",
                       viewMode === 'split' ? "h-full" : "",
                       zenMode ? "max-w-[800px] mx-auto text-base p-16 h-screen" : ""

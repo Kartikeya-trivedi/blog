@@ -173,20 +173,20 @@ export function MarkdownRenderer({ content }: { content: string }) {
           },
           h1: ({ children }) => {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h1 id={id} className="text-display mt-24 mb-8 scroll-mt-20">{children}</h1>;
+            return <h1 id={id} className="text-display mt-16 mb-6 scroll-mt-20">{children}</h1>;
           },
           h2: ({ children }) => {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h2 id={id} className="text-headline-lg mt-16 mb-6 scroll-mt-20">{children}</h2>;
+            return <h2 id={id} className="text-headline-lg mt-10 mb-4 scroll-mt-20">{children}</h2>;
           },
           h3: ({ children }) => {
             const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h3 id={id} className="text-headline-md mt-12 mb-4 scroll-mt-20">{children}</h3>;
+            return <h3 id={id} className="text-headline-md mt-8 mb-3 scroll-mt-20">{children}</h3>;
           },
-          p: ({ children }) => <p className="text-body-lg mb-8 text-on-surface/90 leading-relaxed whitespace-pre-wrap">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-8 space-y-3">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-8 space-y-3">{children}</ol>,
-          li: ({ children }) => <li className="text-body-lg text-on-surface/90 whitespace-pre-wrap">{children}</li>,
+          p: ({ children }) => <p className="text-body-lg mb-5 text-on-surface/90 leading-normal whitespace-pre-wrap">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-5 space-y-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-5 space-y-2">{children}</ol>,
+          li: ({ children }) => <li className="text-body-lg text-on-surface/90 whitespace-pre-wrap leading-normal">{children}</li>,
           table: ({ children }) => (
             <div className="my-12 w-full overflow-x-auto scrollbar-thin scrollbar-thumb-outline-variant">
               <table className="min-w-full border-collapse border border-outline-variant font-sans text-[13px] sm:text-sm">

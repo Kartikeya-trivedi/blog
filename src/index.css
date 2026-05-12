@@ -139,13 +139,13 @@
 
 /* Zen mode article — slightly larger, looser type for deep reading */
 .zen-article-content p {
-  @apply text-[17px] sm:text-[19px] leading-[1.85];
+  @apply text-[17px] sm:text-[19px] leading-[1.7];
 }
 
 .zen-article-content h1,
 .zen-article-content h2,
 .zen-article-content h3 {
-  @apply mt-12 mb-6;
+  @apply mt-10 mb-5;
 }
 
 /* Global overflow safety net */

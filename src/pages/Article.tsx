@@ -350,7 +350,7 @@ export default function ArticlePage() {
         {/* Article content — full width on mobile */}
         <article className="w-full mb-section-gap min-w-0 break-words pb-24 sm:pb-20 lg:col-span-8 lg:col-start-5 lg:w-auto">
           {post.excerpt && (
-            <p className="font-serif italic text-[18px] sm:text-[24px] leading-[1.55] text-secondary mb-10 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
+            <p className="font-serif italic text-[18px] sm:text-[24px] leading-normal text-secondary mb-8 border-l-4 border-outline-variant pl-5 sm:pl-8 py-2">
               {post.excerpt}
             </p>
           )}
