@@ -105,6 +105,7 @@ export default function ArticlePage() {
 
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
   const [zenIndicatorStyle, setZenIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (loading || !post) return;
@@ -136,6 +137,8 @@ export default function ArticlePage() {
   }, [post?.content, loading]);
 
   useEffect(() => {
+    if (isDragging) return;
+    
     const updateIndicator = () => {
       const currentId = activeId || (toc[0]?.id);
       if (!currentId) return;
@@ -173,14 +176,20 @@ export default function ArticlePage() {
     if (!container) return;
     
     const containerRect = container.getBoundingClientRect();
+    // info.point.y is absolute to the viewport
     const relativeY = info.point.y - containerRect.top;
     const percentage = Math.max(0, Math.min(1, relativeY / containerRect.height));
     
+    // Update visual position immediately for smoothness
+    const top = percentage * containerRect.height;
+    if (isZen) {
+      setZenIndicatorStyle(prev => ({ ...prev, top }));
+    } else {
+      setIndicatorStyle(prev => ({ ...prev, top }));
+    }
+
     const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({
-      top: percentage * scrollHeight,
-      behavior: 'auto' // Use auto for instant feedback during drag
-    });
+    window.scrollTo(0, percentage * scrollHeight);
   };
 
   const calculateReadTime = (content: string) => {
@@ -303,9 +312,11 @@ export default function ArticlePage() {
                         dragConstraints={zenTocRef}
                         dragElastic={0}
                         dragMomentum={false}
+                        onDragStart={() => setIsDragging(true)}
+                        onDragEnd={() => setIsDragging(false)}
                         onDrag={(e, info) => handleSliderDrag(e, info, true)}
                         className="absolute left-[-26px] w-[3px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[5px] transition-all"
-                        animate={{
+                        animate={isDragging ? {} : {
                           top: zenIndicatorStyle.top,
                           height: zenIndicatorStyle.height,
                           opacity: zenIndicatorStyle.opacity
@@ -453,9 +464,11 @@ export default function ArticlePage() {
                 dragConstraints={tocRef}
                 dragElastic={0}
                 dragMomentum={false}
+                onDragStart={() => setIsDragging(true)}
+                onDragEnd={() => setIsDragging(false)}
                 onDrag={(e, info) => handleSliderDrag(e, info, false)}
                 className="absolute left-[-34.5px] w-[4px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[6px] transition-all"
-                animate={{
+                animate={isDragging ? {} : {
                   top: indicatorStyle.top,
                   height: indicatorStyle.height,
                   opacity: indicatorStyle.opacity
