@@ -431,15 +431,14 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const dragStartScrollPos = useRef(0);
   
-  // Use a MotionValue for the slider position
+  // y is driven purely by scroll progress
   const y = useMotionValue(0);
   const smoothY = useSpring(y, { stiffness: 300, damping: 30 });
 
-  // Update y whenever scrollProgress or container size changes
   useEffect(() => {
-    if (isDragging || !containerRef.current) return;
-    
     const updateY = () => {
       if (containerRef.current) {
         y.set(scrollYProgress.get() * containerRef.current.offsetHeight);
@@ -454,22 +453,38 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
       unsubscribe();
       window.removeEventListener('resize', updateY);
     };
-  }, [isDragging, scrollYProgress, toc]);
+  }, [scrollYProgress, toc]);
 
-  const handleDrag = (_event: any, info: any) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const relativeY = info.point.y - rect.top;
-    const percentage = Math.max(0, Math.min(1, relativeY / rect.height));
-    
-    y.set(relativeY);
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo(0, percentage * scrollHeight);
+  const onSliderPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    dragStartScrollPos.current = window.scrollY;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!containerRef.current) return;
+      const deltaY = moveEvent.clientY - dragStartY.current;
+      const trackHeight = containerRef.current.offsetHeight;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      
+      // Map the drag delta to the document scroll delta
+      const scrollDelta = (deltaY / trackHeight) * scrollHeight;
+      window.scrollTo(0, dragStartScrollPos.current + scrollDelta);
+    };
+
+    const onPointerUp = () => {
+      setIsDragging(false);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
-    // Don't scroll if we clicked a link or an interactive element
     if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) return;
     
     const rect = containerRef.current.getBoundingClientRect();
@@ -507,25 +522,20 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
         <ul className="space-y-4 relative">
           {/* THE SLIDER (Mini-map scrollbar style) */}
           <motion.div
-            drag="y"
-            dragConstraints={containerRef}
-            dragElastic={0}
-            dragMomentum={false}
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={() => setIsDragging(false)}
-            onDrag={handleDrag}
+            onPointerDown={onSliderPointerDown}
             className={cn(
               "absolute bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing transition-all",
               isZenMode ? "left-[-25.5px] w-[3px]" : "left-[-34px] w-[4px]",
               isDragging ? "w-[6px]" : "group-hover/track:w-[6px]"
             )}
             style={{
-              y: isDragging ? y : smoothY,
+              y: smoothY,
               height: 32,
               top: 0,
               transform: 'translateY(-50%)'
             }}
           />
+
 
           {toc.map(({ id, text, level }, i) => (
             <li 
