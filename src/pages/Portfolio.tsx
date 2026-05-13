@@ -112,12 +112,12 @@ export default function PortfolioPage() {
         <h2 className="text-display mb-10 text-tertiary italic sm:mb-12"> लखनऊ to the world.</h2>
         <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-10 sm:gap-y-4">
           <a
-            href="mailto:hello@kartikeya.build"
+            href="mailto:kartikeyatrivedi@outlook.com"
             className="w-fit max-w-full break-all border-b border-tertiary pb-2 text-label-caps tracking-[0.12em] hover:opacity-70 sm:break-normal sm:tracking-[0.15em]"
           >
-            hello@kartikeya.build
+            kartikeyatrivedi@outlook.com
           </a>
-          <a href="#" className="w-fit shrink-0 border-b border-tertiary pb-2 text-label-caps tracking-[0.15em] hover:opacity-70">
+          <a href="https://www.linkedin.com/in/kartikeyatrivedi/" target="_blank" rel="noopener noreferrer" className="w-fit shrink-0 border-b border-tertiary pb-2 text-label-caps tracking-[0.15em] hover:opacity-70">
             LINKEDIN
           </a>
         </div>

@@ -164,10 +164,24 @@ export default function ArticlePage() {
     };
 
     updateIndicator();
-    // Re-run on window resize as offsetTop might change
     window.addEventListener('resize', updateIndicator);
     return () => window.removeEventListener('resize', updateIndicator);
   }, [activeId, toc, loading]);
+
+  const handleSliderDrag = (event: any, info: any, isZen: boolean) => {
+    const container = isZen ? zenTocRef.current : tocRef.current;
+    if (!container) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const relativeY = info.point.y - containerRect.top;
+    const percentage = Math.max(0, Math.min(1, relativeY / containerRect.height));
+    
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    window.scrollTo({
+      top: percentage * scrollHeight,
+      behavior: 'auto' // Use auto for instant feedback during drag
+    });
+  };
 
   const calculateReadTime = (content: string) => {
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -285,7 +299,12 @@ export default function ArticlePage() {
                     <h4 className="text-[9px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5">On this page</h4>
                     <ul ref={zenTocRef} className="space-y-3 relative">
                       <motion.div
-                        className="absolute left-[-26px] w-[3px] bg-tertiary rounded-full z-10"
+                        drag="y"
+                        dragConstraints={zenTocRef}
+                        dragElastic={0}
+                        dragMomentum={false}
+                        onDrag={(e, info) => handleSliderDrag(e, info, true)}
+                        className="absolute left-[-26px] w-[3px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[5px] transition-all"
                         animate={{
                           top: zenIndicatorStyle.top,
                           height: zenIndicatorStyle.height,
@@ -430,7 +449,12 @@ export default function ArticlePage() {
             </h4>
             <ul ref={tocRef} className="space-y-4 relative">
               <motion.div
-                className="absolute left-[-34.5px] w-[4px] bg-tertiary rounded-full z-10"
+                drag="y"
+                dragConstraints={tocRef}
+                dragElastic={0}
+                dragMomentum={false}
+                onDrag={(e, info) => handleSliderDrag(e, info, false)}
+                className="absolute left-[-34.5px] w-[4px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[6px] transition-all"
                 animate={{
                   top: indicatorStyle.top,
                   height: indicatorStyle.height,
