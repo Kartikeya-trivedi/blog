@@ -85,36 +85,43 @@ export default function ArticlePage() {
 
 
 
+  // Robust scroll tracking for TOC
   useEffect(() => {
     if (loading || !post) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > 0) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { 
-        rootMargin: '-100px 0% -70% 0%',
-        threshold: [0, 0.1, 0.5, 1.0]
-      }
-    );
-
-    // Use a small delay to ensure content is fully rendered
-    const timer = setTimeout(() => {
-      const headingElements = document.querySelectorAll(
+    const updateActiveId = () => {
+      const headings = Array.from(document.querySelectorAll(
         '.markdown-content h1[id], .markdown-content h2[id], .markdown-content h3[id], .markdown-content h4[id], .markdown-content h5[id], .markdown-content h6[id]'
-      );
-      headingElements.forEach((el) => observer.observe(el));
-    }, 500);
+      )) as HTMLElement[];
+      
+      // We consider a section active if its heading is at or above this line (in pixels from top)
+      const readingLine = 160; 
+      
+      let currentId = '';
+      for (const heading of headings) {
+        const rect = heading.getBoundingClientRect();
+        if (rect.top <= readingLine) {
+          currentId = heading.id;
+        } else {
+          break;
+        }
+      }
+      
+      if (currentId && currentId !== activeId) {
+        setActiveId(currentId);
+      }
+    };
+
+    window.addEventListener('scroll', updateActiveId, { passive: true });
+    
+    // Initial check after a short delay for rendering
+    const timer = setTimeout(updateActiveId, 500);
 
     return () => {
+      window.removeEventListener('scroll', updateActiveId);
       clearTimeout(timer);
-      observer.disconnect();
     };
-  }, [post?.content, loading]);
+  }, [post?.content, loading, activeId]);
 
 
 
