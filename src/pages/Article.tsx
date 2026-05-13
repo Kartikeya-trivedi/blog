@@ -236,8 +236,18 @@ export default function ArticlePage() {
       exit={{ opacity: 0 }}
       className="relative w-full min-w-0"
     >
-      {/* Reading Progress Bar */}
+      <TableOfContents 
+        toc={toc} 
+        activeId={activeId} 
+        setActiveId={setActiveId} 
+        isZenMode={false} 
+        scrollYProgress={scrollYProgress} 
+        post={post}
+      />
+      
+      {/* Reading Progress Bar (Top) */}
       <motion.div className="fixed top-0 left-0 right-0 h-[2px] bg-tertiary z-[100] origin-left" style={{ scaleX }} />
+
 
       {/* ── ZEN MODE OVERLAY ── */}
       <AnimatePresence>
@@ -301,55 +311,17 @@ export default function ArticlePage() {
                 </div>
               </div>
 
-              {/* Mini TOC — desktop only, sticky right column */}
-              {toc.length > 0 && (
-                <aside className="hidden lg:block w-[220px] shrink-0">
-                  <div className="sticky top-24 border-l border-outline-variant pl-6 py-2 relative">
-                    <h4 className="text-[9px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5">On this page</h4>
-                    <ul ref={zenTocRef} className="space-y-3 relative">
-                      <motion.div
-                        drag="y"
-                        dragConstraints={zenTocRef}
-                        dragElastic={0}
-                        dragMomentum={false}
-                        onDragStart={() => setIsDragging(true)}
-                        onDragEnd={() => setIsDragging(false)}
-                        onDrag={(e, info) => handleSliderDrag(e, info, true)}
-                        className="absolute left-[-26px] w-[3px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[5px] transition-all"
-                        animate={isDragging ? {} : {
-                          top: zenIndicatorStyle.top,
-                          height: zenIndicatorStyle.height,
-                          opacity: zenIndicatorStyle.opacity
-                        }}
-                        transition={{ type: "spring", stiffness: 300, damping: 35 }}
-                      />
-                      {toc.map(({ id, text, level }, i) => (
-                        <li 
-                          key={i} 
-                          data-id={id}
-                          style={{ marginLeft: level > 1 ? `${(level - 1) * 0.75}rem` : '0' }}
-                          className="relative"
-                        >
-                          <a
-                            href={`#${id}`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                              setActiveId(id);
-                            }}
-                            className={cn(
-                              "text-[11px] font-mono leading-tight hover:text-tertiary transition-colors block",
-                              activeId === id || (!activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
-                            )}
-                          >
-                            {text}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </aside>
-              )}
+            {/* Mini TOC — desktop only, sticky right column */}
+            {toc.length > 0 && (
+              <TableOfContents 
+                toc={toc} 
+                activeId={activeId} 
+                setActiveId={setActiveId} 
+                isZenMode={true} 
+                scrollYProgress={scrollYProgress} 
+                post={post}
+              />
+            )}
             </div>
           </motion.div>
         )}
@@ -452,84 +424,15 @@ export default function ArticlePage() {
       {/* Article body + TOC — simpler layout on mobile to prevent truncation */}
       <div className="max-w-container-max mx-auto px-margin-page flex flex-col lg:grid lg:grid-cols-12 lg:gap-12 relative">
         {/* TOC Sidebar — desktop only */}
-        <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
-          <div className="border-l border-outline-variant pl-8 py-2 relative">
-            <h4 className="text-label-caps text-tertiary mb-6 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-tertiary rounded-full" />
-              DOCUMENT INDEX
-            </h4>
-            <ul ref={tocRef} className="space-y-4 relative">
-              <motion.div
-                drag="y"
-                dragConstraints={tocRef}
-                dragElastic={0}
-                dragMomentum={false}
-                onDragStart={() => setIsDragging(true)}
-                onDragEnd={() => setIsDragging(false)}
-                onDrag={(e, info) => handleSliderDrag(e, info, false)}
-                className="absolute left-[-34.5px] w-[4px] bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing hover:w-[6px] transition-all"
-                animate={isDragging ? {} : {
-                  top: indicatorStyle.top,
-                  height: indicatorStyle.height,
-                  opacity: indicatorStyle.opacity
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 35 }}
-              />
-              {toc.map(({ id, text, level }, i) => (
-                <li 
-                  key={i} 
-                  data-id={id}
-                  className={cn(
-                    "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2 relative",
-                    activeId === id || (level === 1 && !activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
-                  )} 
-                  style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
-                >
-                  {level > 1 && <span className={cn(
-                    "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
-                    activeId === id ? "bg-tertiary" : "bg-current"
-                  )} />}
-                  <a 
-                    href={`#${id}`} 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                      setActiveId(id);
-                    }}
-                    className="hover:underline tracking-tight uppercase"
-                  >
-                    {text}
-                  </a>
-                </li>
-              ))}
-              {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
-            </ul>
-
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-outline-variant">
-                <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
-                <div className="flex flex-wrap gap-2">
-                  {post.tags.map(tag => (
-                    <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {post.canonicalUrl && (
-              <div className="mt-12 pt-8 border-t border-outline-variant">
-                <a
-                  href={post.canonicalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-[10px] font-mono text-secondary hover:text-tertiary transition-colors"
-                >
-                  <ExternalLink size={14} /> CANONICAL SOURCE
-                </a>
-              </div>
-            )}
-          </div>
-        </aside>
+        <TableOfContents 
+          toc={toc} 
+          activeId={activeId} 
+          setActiveId={setActiveId} 
+          isZenMode={false} 
+          scrollYProgress={scrollYProgress} 
+          isSidebar 
+          post={post}
+        />
 
         {/* Article content — full width on mobile */}
         <article className="w-full mb-section-gap min-w-0 break-words pb-24 sm:pb-20 lg:col-span-8 lg:col-start-5 lg:w-auto">
@@ -569,6 +472,144 @@ export default function ArticlePage() {
         <CommentSection postId={post.id} comments={comments} onCommentAdded={onCommentAdded} />
       </section>
     </motion.div>
+  );
+}
+
+function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgress, isSidebar, post }: { 
+  toc: any[], 
+  activeId: string, 
+  setActiveId: (id: string) => void, 
+  isZenMode: boolean, 
+  scrollYProgress: any,
+  isSidebar?: boolean,
+  post?: BlogPost | null
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragY, setDragY] = useState(0);
+
+  const handleDrag = (event: any, info: any) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const relativeY = info.point.y - rect.top;
+    const percentage = Math.max(0, Math.min(1, relativeY / rect.height));
+    
+    setDragY(relativeY);
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    window.scrollTo(0, percentage * scrollHeight);
+  };
+
+  // Map scroll progress to indicator position
+  // We use a spring for smooth visual tracking
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+  
+  return (
+    <aside className={cn(
+      isZenMode ? "hidden lg:block w-[220px] shrink-0" : 
+      isSidebar ? "hidden lg:block col-span-3 sticky top-32 h-fit" : "hidden"
+    )}>
+      <div ref={containerRef} className={cn(
+        "border-l border-outline-variant relative py-2",
+        isZenMode ? "pl-6" : "pl-8"
+      )}>
+        <h4 className={cn(
+          "font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5",
+          isSidebar ? "text-label-caps text-tertiary mb-6 flex items-center gap-2" : "text-[9px]"
+        )}>
+          {isSidebar && <span className="w-1.5 h-1.5 bg-tertiary rounded-full" />}
+          {isSidebar ? "DOCUMENT INDEX" : "On this page"}
+        </h4>
+        
+        <ul className="space-y-4 relative">
+          {/* THE SLIDER (Mini-map scrollbar style) */}
+          <motion.div
+            drag="y"
+            dragConstraints={containerRef}
+            dragElastic={0}
+            dragMomentum={false}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={() => setIsDragging(false)}
+            onDrag={handleDrag}
+            className={cn(
+              "absolute bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing transition-all",
+              isZenMode ? "left-[-25.5px] w-[3px]" : "left-[-34px] w-[4px]",
+              isDragging ? "w-[6px]" : "hover:w-[6px]"
+            )}
+            style={{
+              top: isDragging ? dragY : undefined,
+              // When not dragging, use scroll progress to position
+              y: isDragging ? 0 : smoothProgress as any, // This needs to be scaled
+              height: 32, // Fixed height for a "handle" feel
+              transform: isDragging ? 'none' : 'translateY(-50%)' // Center handle
+            }}
+            // Use transform to position based on progress
+            animate={isDragging ? {} : {
+              top: `calc(${scrollYProgress.get() * 100}%)`
+            }}
+          />
+
+          {toc.map(({ id, text, level }, i) => (
+            <li 
+              key={i} 
+              data-id={id}
+              className={cn(
+                "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2 relative",
+                activeId === id || (!activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
+              )} 
+              style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
+            >
+              {level > 1 && !isZenMode && <span className={cn(
+                "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
+                activeId === id ? "bg-tertiary" : "bg-current"
+              )} />}
+              <a 
+                href={`#${id}`} 
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                  setActiveId(id);
+                }}
+                className={cn(
+                  "tracking-tight uppercase",
+                  isSidebar && "hover:underline"
+                )}
+              >
+                {text}
+              </a>
+            </li>
+          ))}
+          {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
+        </ul>
+
+        {isSidebar && post && (
+          <>
+            {post.tags && post.tags.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-outline-variant">
+                <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map(tag => (
+                    <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {post.canonicalUrl && (
+              <div className="mt-12 pt-8 border-t border-outline-variant">
+                <a
+                  href={post.canonicalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[10px] font-mono text-secondary hover:text-tertiary transition-colors"
+                >
+                  <ExternalLink size={14} /> CANONICAL SOURCE
+                </a>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </aside>
   );
 }
 
