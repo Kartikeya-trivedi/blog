@@ -172,16 +172,34 @@ export function MarkdownRenderer({ content }: { content: string }) {
             );
           },
           h1: ({ children }) => {
-            const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h1 id={id} className="text-display mt-16 mb-6 scroll-mt-20">{children}</h1>;
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h1 id={id} className="text-display mt-16 mb-6 scroll-mt-24">{children}</h1>;
           },
           h2: ({ children }) => {
-            const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h2 id={id} className="text-headline-lg mt-10 mb-4 scroll-mt-20">{children}</h2>;
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h2 id={id} className="text-headline-lg mt-12 mb-6 scroll-mt-24">{children}</h2>;
           },
           h3: ({ children }) => {
-            const id = String(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-            return <h3 id={id} className="text-headline-md mt-8 mb-3 scroll-mt-20">{children}</h3>;
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h3 id={id} className="text-headline-md mt-10 mb-4 scroll-mt-24">{children}</h3>;
+          },
+          h4: ({ children }) => {
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h4 id={id} className="text-headline-sm mt-8 mb-4 scroll-mt-24">{children}</h4>;
+          },
+          h5: ({ children }) => {
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h5 id={id} className="text-label-caps mt-6 mb-3 scroll-mt-24">{children}</h5>;
+          },
+          h6: ({ children }) => {
+            const text = String(children).replace(/[object Object]/g, '');
+            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
+            return <h6 id={id} className="text-[11px] font-mono font-bold uppercase tracking-widest mt-6 mb-2 scroll-mt-24">{children}</h6>;
           },
           p: ({ children }) => <p className="text-body-lg mb-6 text-on-surface/90 leading-relaxed whitespace-pre-wrap">{children}</p>,
           ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-6 space-y-2">{children}</ul>,

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, useScroll, useSpring, AnimatePresence, LayoutGroup } from 'motion/react';
 import { ChevronRight, Twitter, Linkedin, Link as LinkIcon, ExternalLink, Bookmark, Clock, Minimize2, Maximize2, ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
@@ -19,6 +19,31 @@ export default function ArticlePage() {
     damping: 30,
     restDelta: 0.001
   });
+
+  const [activeId, setActiveId] = useState<string>('');
+  const tocRef = useRef<HTMLUListElement>(null);
+  const zenTocRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id);
+          }
+        });
+      },
+      { 
+        rootMargin: '-100px 0% -80% 0%',
+        threshold: 0
+      }
+    );
+
+    const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
+    headingElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [post?.content, loading]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -59,13 +84,18 @@ export default function ArticlePage() {
 
   const toc = useMemo(() => {
     if (!post?.content) return [];
-    const headings = post.content.match(/^#+\s+.+$/gm) || [];
+    // Match lines starting with 1-6 hashtags, followed by optional space, then text
+    const headings = post.content.match(/^#{1,6}\s*.*$/gm) || [];
     return headings.map(h => {
       const level = (h.match(/#/g) || []).length;
-      const text = h.replace(/^#+\s+/, '');
-      const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+      const text = h.replace(/^#+\s*/, '').trim();
+      // Improved ID generation to match common markdown parsers
+      const id = text.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+$/g, '');
       return { level, text, id };
-    });
+    }).filter(item => item.text.length > 0);
   }, [post?.content]);
 
   const calculateReadTime = (content: string) => {
@@ -180,16 +210,28 @@ export default function ArticlePage() {
               {/* Mini TOC — desktop only, sticky right column */}
               {toc.length > 0 && (
                 <aside className="hidden lg:block w-[220px] shrink-0">
-                  <div className="sticky top-24 border-l border-outline-variant pl-6 py-2">
+                  <div className="sticky top-24 border-l border-outline-variant pl-6 py-2 relative">
                     <h4 className="text-[9px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5">On this page</h4>
-                    <ul className="space-y-3">
+                    <ul ref={zenTocRef} className="space-y-3 relative">
                       {toc.map(({ id, text, level }, i) => (
-                        <li key={i} style={{ marginLeft: level > 1 ? `${(level - 1) * 0.75}rem` : '0' }}>
+                        <li 
+                          key={i} 
+                          data-id={id}
+                          style={{ marginLeft: level > 1 ? `${(level - 1) * 0.75}rem` : '0' }}
+                          className="relative"
+                        >
+                          {activeId === id && (
+                            <motion.div
+                              layoutId="zen-toc-slider"
+                              className="absolute left-[-25px] w-[2px] bg-tertiary h-full rounded-full"
+                              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
+                          )}
                           <a
                             href={`#${id}`}
                             className={cn(
                               "text-[11px] font-mono leading-tight hover:text-tertiary transition-colors block",
-                              level === 1 ? "text-tertiary font-semibold" : "text-secondary opacity-60"
+                              activeId === id || (level === 1 && !activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
                             )}
                           >
                             {text}
@@ -303,18 +345,33 @@ export default function ArticlePage() {
       <div className="max-w-container-max mx-auto px-margin-page flex flex-col lg:grid lg:grid-cols-12 lg:gap-12 relative">
         {/* TOC Sidebar — desktop only */}
         <aside className="hidden lg:block col-span-3 sticky top-32 h-fit">
-          <div className="border-l border-outline-variant pl-8 py-2">
+          <div className="border-l border-outline-variant pl-8 py-2 relative">
             <h4 className="text-label-caps text-tertiary mb-6 flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-tertiary rounded-full" />
               DOCUMENT INDEX
             </h4>
-            <ul className="space-y-4">
+            <ul ref={tocRef} className="space-y-4 relative">
               {toc.map(({ id, text, level }, i) => (
-                <li key={i} className={cn(
-                  "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2",
-                  level === 1 ? "text-tertiary font-bold" : "text-secondary opacity-60"
-                )} style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}>
-                  {level > 1 && <span className="mt-1.5 w-1 h-1 bg-current rounded-full flex-shrink-0" />}
+                <li 
+                  key={i} 
+                  data-id={id}
+                  className={cn(
+                    "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2 relative",
+                    activeId === id || (level === 1 && !activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
+                  )} 
+                  style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
+                >
+                  {activeId === id && (
+                    <motion.div
+                      layoutId="toc-slider"
+                      className="absolute left-[-33.5px] w-[3px] bg-tertiary h-full rounded-full"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  {level > 1 && <span className={cn(
+                    "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
+                    activeId === id ? "bg-tertiary" : "bg-current"
+                  )} />}
                   <a href={`#${id}`} className="hover:underline tracking-tight uppercase">{text}</a>
                 </li>
               ))}
