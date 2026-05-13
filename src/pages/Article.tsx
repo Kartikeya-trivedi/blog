@@ -107,34 +107,67 @@ export default function ArticlePage() {
   const [zenIndicatorStyle, setZenIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
 
   useEffect(() => {
-    if (activeId && tocRef.current) {
-      const activeElement = tocRef.current.querySelector(`[data-id="${activeId}"]`) as HTMLElement;
-      if (activeElement) {
-        setIndicatorStyle({
-          top: activeElement.offsetTop,
-          height: activeElement.offsetHeight,
-          opacity: 1
+    if (loading || !post) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0) {
+            setActiveId(entry.target.id);
+          }
         });
+      },
+      { 
+        rootMargin: '-80px 0% -70% 0%',
+        threshold: [0, 0.1, 0.5, 1.0]
       }
-    } else {
-      setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
-    }
-  }, [activeId]);
+    );
+
+    // Use a small delay to ensure content is fully rendered
+    const timer = setTimeout(() => {
+      const headingElements = document.querySelectorAll('.markdown-content h1[id], .markdown-content h2[id], .markdown-content h3[id], .markdown-content h4[id]');
+      headingElements.forEach((el) => observer.observe(el));
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [post?.content, loading]);
 
   useEffect(() => {
-    if (activeId && zenTocRef.current) {
-      const activeElement = zenTocRef.current.querySelector(`[data-id="${activeId}"]`) as HTMLElement;
-      if (activeElement) {
-        setZenIndicatorStyle({
-          top: activeElement.offsetTop,
-          height: activeElement.offsetHeight,
-          opacity: 1
-        });
+    const updateIndicator = () => {
+      const currentId = activeId || (toc[0]?.id);
+      if (!currentId) return;
+
+      if (tocRef.current) {
+        const activeElement = tocRef.current.querySelector(`[data-id="${currentId}"]`) as HTMLElement;
+        if (activeElement) {
+          setIndicatorStyle({
+            top: activeElement.offsetTop,
+            height: activeElement.offsetHeight,
+            opacity: 1
+          });
+        }
       }
-    } else {
-      setZenIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
-    }
-  }, [activeId]);
+
+      if (zenTocRef.current) {
+        const activeElement = zenTocRef.current.querySelector(`[data-id="${currentId}"]`) as HTMLElement;
+        if (activeElement) {
+          setZenIndicatorStyle({
+            top: activeElement.offsetTop,
+            height: activeElement.offsetHeight,
+            opacity: 1
+          });
+        }
+      }
+    };
+
+    updateIndicator();
+    // Re-run on window resize as offsetTop might change
+    window.addEventListener('resize', updateIndicator);
+    return () => window.removeEventListener('resize', updateIndicator);
+  }, [activeId, toc, loading]);
 
   const calculateReadTime = (content: string) => {
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -269,9 +302,14 @@ export default function ArticlePage() {
                         >
                           <a
                             href={`#${id}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                              setActiveId(id);
+                            }}
                             className={cn(
                               "text-[11px] font-mono leading-tight hover:text-tertiary transition-colors block",
-                              activeId === id || (level === 1 && !activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
+                              activeId === id || (!activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
                             )}
                           >
                             {text}
@@ -414,7 +452,17 @@ export default function ArticlePage() {
                     "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
                     activeId === id ? "bg-tertiary" : "bg-current"
                   )} />}
-                  <a href={`#${id}`} className="hover:underline tracking-tight uppercase">{text}</a>
+                  <a 
+                    href={`#${id}`} 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                      setActiveId(id);
+                    }}
+                    className="hover:underline tracking-tight uppercase"
+                  >
+                    {text}
+                  </a>
                 </li>
               ))}
               {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
