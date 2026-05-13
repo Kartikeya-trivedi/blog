@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, useScroll, useSpring, AnimatePresence, LayoutGroup } from 'motion/react';
+import { motion, useScroll, useSpring, useTransform, useMotionValue, AnimatePresence, LayoutGroup } from 'motion/react';
 import { ChevronRight, Twitter, Linkedin, Link as LinkIcon, ExternalLink, Bookmark, Clock, Minimize2, Maximize2, ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { blogService, BlogPost } from '@/src/lib/blogService';
@@ -21,8 +21,7 @@ export default function ArticlePage() {
   });
 
   const [activeId, setActiveId] = useState<string>('');
-  const tocRef = useRef<HTMLUListElement>(null);
-  const zenTocRef = useRef<HTMLUListElement>(null);
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -103,9 +102,7 @@ export default function ArticlePage() {
     }).filter(item => item.text.length > 0);
   }, [post?.content]);
 
-  const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
-  const [zenIndicatorStyle, setZenIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
-  const [isDragging, setIsDragging] = useState(false);
+
 
   useEffect(() => {
     if (loading || !post) return;
@@ -136,61 +133,9 @@ export default function ArticlePage() {
     };
   }, [post?.content, loading]);
 
-  useEffect(() => {
-    if (isDragging) return;
-    
-    const updateIndicator = () => {
-      const currentId = activeId || (toc[0]?.id);
-      if (!currentId) return;
 
-      if (tocRef.current) {
-        const activeElement = tocRef.current.querySelector(`[data-id="${currentId}"]`) as HTMLElement;
-        if (activeElement) {
-          setIndicatorStyle({
-            top: activeElement.offsetTop,
-            height: activeElement.offsetHeight,
-            opacity: 1
-          });
-        }
-      }
 
-      if (zenTocRef.current) {
-        const activeElement = zenTocRef.current.querySelector(`[data-id="${currentId}"]`) as HTMLElement;
-        if (activeElement) {
-          setZenIndicatorStyle({
-            top: activeElement.offsetTop,
-            height: activeElement.offsetHeight,
-            opacity: 1
-          });
-        }
-      }
-    };
 
-    updateIndicator();
-    window.addEventListener('resize', updateIndicator);
-    return () => window.removeEventListener('resize', updateIndicator);
-  }, [activeId, toc, loading]);
-
-  const handleSliderDrag = (event: any, info: any, isZen: boolean) => {
-    const container = isZen ? zenTocRef.current : tocRef.current;
-    if (!container) return;
-    
-    const containerRect = container.getBoundingClientRect();
-    // info.point.y is absolute to the viewport
-    const relativeY = info.point.y - containerRect.top;
-    const percentage = Math.max(0, Math.min(1, relativeY / containerRect.height));
-    
-    // Update visual position immediately for smoothness
-    const top = percentage * containerRect.height;
-    if (isZen) {
-      setZenIndicatorStyle(prev => ({ ...prev, top }));
-    } else {
-      setIndicatorStyle(prev => ({ ...prev, top }));
-    }
-
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo(0, percentage * scrollHeight);
-  };
 
   const calculateReadTime = (content: string) => {
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -486,32 +431,71 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragY, setDragY] = useState(0);
+  
+  // Use a MotionValue for the slider position
+  const y = useMotionValue(0);
+  const smoothY = useSpring(y, { stiffness: 300, damping: 30 });
 
-  const handleDrag = (event: any, info: any) => {
+  // Update y whenever scrollProgress or container size changes
+  useEffect(() => {
+    if (isDragging || !containerRef.current) return;
+    
+    const updateY = () => {
+      if (containerRef.current) {
+        y.set(scrollYProgress.get() * containerRef.current.offsetHeight);
+      }
+    };
+
+    updateY();
+    const unsubscribe = scrollYProgress.on("change", updateY);
+    window.addEventListener('resize', updateY);
+    
+    return () => {
+      unsubscribe();
+      window.removeEventListener('resize', updateY);
+    };
+  }, [isDragging, scrollYProgress, toc]);
+
+  const handleDrag = (_event: any, info: any) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const relativeY = info.point.y - rect.top;
     const percentage = Math.max(0, Math.min(1, relativeY / rect.height));
     
-    setDragY(relativeY);
+    y.set(relativeY);
     const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
     window.scrollTo(0, percentage * scrollHeight);
   };
 
-  // Map scroll progress to indicator position
-  // We use a spring for smooth visual tracking
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
-  
+  const handleTrackClick = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    // Don't scroll if we clicked a link or an interactive element
+    if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const relativeY = e.clientY - rect.top;
+    const percentage = Math.max(0, Math.min(1, relativeY / rect.height));
+    
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    window.scrollTo({
+      top: percentage * scrollHeight,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <aside className={cn(
       isZenMode ? "hidden lg:block w-[220px] shrink-0" : 
       isSidebar ? "hidden lg:block col-span-3 sticky top-32 h-fit" : "hidden"
     )}>
-      <div ref={containerRef} className={cn(
-        "border-l border-outline-variant relative py-2",
-        isZenMode ? "pl-6" : "pl-8"
-      )}>
+      <div 
+        ref={containerRef} 
+        onClick={handleTrackClick}
+        className={cn(
+          "border-l border-outline-variant relative py-2 cursor-pointer group/track",
+          isZenMode ? "pl-6" : "pl-8"
+        )}
+      >
         <h4 className={cn(
           "font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5",
           isSidebar ? "text-label-caps text-tertiary mb-6 flex items-center gap-2" : "text-[9px]"
@@ -533,18 +517,13 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
             className={cn(
               "absolute bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing transition-all",
               isZenMode ? "left-[-25.5px] w-[3px]" : "left-[-34px] w-[4px]",
-              isDragging ? "w-[6px]" : "hover:w-[6px]"
+              isDragging ? "w-[6px]" : "group-hover/track:w-[6px]"
             )}
             style={{
-              top: isDragging ? dragY : undefined,
-              // When not dragging, use scroll progress to position
-              y: isDragging ? 0 : smoothProgress as any, // This needs to be scaled
-              height: 32, // Fixed height for a "handle" feel
-              transform: isDragging ? 'none' : 'translateY(-50%)' // Center handle
-            }}
-            // Use transform to position based on progress
-            animate={isDragging ? {} : {
-              top: `calc(${scrollYProgress.get() * 100}%)`
+              y: isDragging ? y : smoothY,
+              height: 32,
+              top: 0,
+              transform: 'translateY(-50%)'
             }}
           />
 
