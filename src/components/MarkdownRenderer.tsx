@@ -129,7 +129,35 @@ const Callout = ({ type, children }: { type: 'note' | 'warning' | 'tip' | 'succe
   );
 };
 
+const getTextContent = (children: React.ReactNode): string => {
+  if (typeof children === 'string') return children;
+  if (Array.isArray(children)) return children.map(getTextContent).join('');
+  if (React.isValidElement(children)) return getTextContent(children.props.children);
+  return '';
+};
+
 export function MarkdownRenderer({ content }: { content: string }) {
+  const headingRenderer = (level: number, children: React.ReactNode) => {
+    const text = getTextContent(children);
+    const id = text.toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+$/g, '');
+    
+    const className = [
+      '',
+      'text-display mt-16 mb-6 scroll-mt-24',
+      'text-headline-lg mt-12 mb-6 scroll-mt-24',
+      'text-headline-md mt-10 mb-4 scroll-mt-24',
+      'text-headline-sm mt-8 mb-4 scroll-mt-24',
+      'text-label-caps mt-6 mb-3 scroll-mt-24',
+      'text-[11px] font-mono font-bold uppercase tracking-widest mt-6 mb-2 scroll-mt-24'
+    ][level] || '';
+
+    const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+    return <Tag id={id} className={className}>{children}</Tag>;
+  };
+
   return (
     <div className="markdown-content min-w-0 break-words">
       <ReactMarkdown
@@ -171,36 +199,12 @@ export function MarkdownRenderer({ content }: { content: string }) {
               </blockquote>
             );
           },
-          h1: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h1 id={id} className="text-display mt-16 mb-6 scroll-mt-24">{children}</h1>;
-          },
-          h2: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h2 id={id} className="text-headline-lg mt-12 mb-6 scroll-mt-24">{children}</h2>;
-          },
-          h3: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h3 id={id} className="text-headline-md mt-10 mb-4 scroll-mt-24">{children}</h3>;
-          },
-          h4: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h4 id={id} className="text-headline-sm mt-8 mb-4 scroll-mt-24">{children}</h4>;
-          },
-          h5: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h5 id={id} className="text-label-caps mt-6 mb-3 scroll-mt-24">{children}</h5>;
-          },
-          h6: ({ children }) => {
-            const text = String(children).replace(/[object Object]/g, '');
-            const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+$/g, '');
-            return <h6 id={id} className="text-[11px] font-mono font-bold uppercase tracking-widest mt-6 mb-2 scroll-mt-24">{children}</h6>;
-          },
+          h1: ({ children }) => headingRenderer(1, children),
+          h2: ({ children }) => headingRenderer(2, children),
+          h3: ({ children }) => headingRenderer(3, children),
+          h4: ({ children }) => headingRenderer(4, children),
+          h5: ({ children }) => headingRenderer(5, children),
+          h6: ({ children }) => headingRenderer(6, children),
           p: ({ children }) => <p className="text-body-lg mb-6 text-on-surface/90 leading-relaxed whitespace-pre-wrap">{children}</p>,
           ul: ({ children }) => <ul className="list-disc list-outside ml-6 mb-6 space-y-2">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-outside ml-6 mb-6 space-y-2">{children}</ol>,

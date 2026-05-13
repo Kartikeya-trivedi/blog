@@ -117,6 +117,43 @@ export const blogService = {
     return mapRowToPost(data);
   },
 
+  getRelatedPosts: async (category: string, currentPostId: string): Promise<BlogPost[]> => {
+    // Fetch posts in the same category, excluding the current one.
+    // Only select fields needed for the RelatedCard to save bandwidth.
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('id, slug, title, category, image')
+      .eq('category', category)
+      .eq('status', 'PUBLISHED')
+      .neq('id', currentPostId)
+      .limit(3);
+    
+    if (error) {
+      console.error('Error fetching related posts by category:', error);
+      // Fallback: just get any 3 published posts
+      const { data: fallbackData } = await supabase
+        .from('blogs')
+        .select('id, slug, title, category, image')
+        .eq('status', 'PUBLISHED')
+        .neq('id', currentPostId)
+        .limit(3);
+      return (fallbackData ?? []).map(mapRowToPost);
+    }
+    
+    if (!data || data.length === 0) {
+      // Fallback if no posts in same category
+      const { data: fallbackData } = await supabase
+        .from('blogs')
+        .select('id, slug, title, category, image')
+        .eq('status', 'PUBLISHED')
+        .neq('id', currentPostId)
+        .limit(3);
+      return (fallbackData ?? []).map(mapRowToPost);
+    }
+
+    return data.map(mapRowToPost);
+  },
+
   savePost: async (post: BlogPost) => {
     // Map camelCase JS fields to snake_case DB columns
     const payload: Record<string, unknown> = {

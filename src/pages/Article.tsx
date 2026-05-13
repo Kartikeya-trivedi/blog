@@ -53,10 +53,14 @@ export default function ArticlePage() {
           const data = await blogService.getPostBySlug(slug);
           if (data) {
             setPost(data);
-            const all = (await blogService.getPosts()).filter(p => p.id !== data.id && p.status === 'PUBLISHED');
-            const sameCategory = all.filter(p => p.category === data.category);
-            setRelatedPosts(sameCategory.length > 0 ? sameCategory.slice(0, 3) : all.slice(0, 3));
-            const postComments = await blogService.getComments(data.id);
+            
+            // Parallelize fetching related posts and comments
+            const [related, postComments] = await Promise.all([
+              blogService.getRelatedPosts(data.category, data.id),
+              blogService.getComments(data.id)
+            ]);
+            
+            setRelatedPosts(related);
             setComments(postComments);
           }
         } catch (error) {
@@ -84,12 +88,13 @@ export default function ArticlePage() {
 
   const toc = useMemo(() => {
     if (!post?.content) return [];
-    // Match lines starting with 1-6 hashtags, followed by optional space, then text
     const headings = post.content.match(/^#{1,6}\s*.*$/gm) || [];
     return headings.map(h => {
       const level = (h.match(/#/g) || []).length;
-      const text = h.replace(/^#+\s*/, '').trim();
-      // Improved ID generation to match common markdown parsers
+      // Strip hashtags and then strip markdown bold/italic markers
+      const rawText = h.replace(/^#+\s*/, '').trim();
+      const text = rawText.replace(/(\*\*|__|\*|_)/g, '');
+      
       const id = text.toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
@@ -97,6 +102,39 @@ export default function ArticlePage() {
       return { level, text, id };
     }).filter(item => item.text.length > 0);
   }, [post?.content]);
+
+  const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+  const [zenIndicatorStyle, setZenIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+
+  useEffect(() => {
+    if (activeId && tocRef.current) {
+      const activeElement = tocRef.current.querySelector(`[data-id="${activeId}"]`) as HTMLElement;
+      if (activeElement) {
+        setIndicatorStyle({
+          top: activeElement.offsetTop,
+          height: activeElement.offsetHeight,
+          opacity: 1
+        });
+      }
+    } else {
+      setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
+    }
+  }, [activeId]);
+
+  useEffect(() => {
+    if (activeId && zenTocRef.current) {
+      const activeElement = zenTocRef.current.querySelector(`[data-id="${activeId}"]`) as HTMLElement;
+      if (activeElement) {
+        setZenIndicatorStyle({
+          top: activeElement.offsetTop,
+          height: activeElement.offsetHeight,
+          opacity: 1
+        });
+      }
+    } else {
+      setZenIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
+    }
+  }, [activeId]);
 
   const calculateReadTime = (content: string) => {
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -213,6 +251,15 @@ export default function ArticlePage() {
                   <div className="sticky top-24 border-l border-outline-variant pl-6 py-2 relative">
                     <h4 className="text-[9px] font-mono tracking-[0.2em] uppercase text-secondary opacity-50 mb-5">On this page</h4>
                     <ul ref={zenTocRef} className="space-y-3 relative">
+                      <motion.div
+                        className="absolute left-[-26px] w-[3px] bg-tertiary rounded-full z-10"
+                        animate={{
+                          top: zenIndicatorStyle.top,
+                          height: zenIndicatorStyle.height,
+                          opacity: zenIndicatorStyle.opacity
+                        }}
+                        transition={{ type: "spring", stiffness: 300, damping: 35 }}
+                      />
                       {toc.map(({ id, text, level }, i) => (
                         <li 
                           key={i} 
@@ -220,13 +267,6 @@ export default function ArticlePage() {
                           style={{ marginLeft: level > 1 ? `${(level - 1) * 0.75}rem` : '0' }}
                           className="relative"
                         >
-                          {activeId === id && (
-                            <motion.div
-                              layoutId="zen-toc-slider"
-                              className="absolute left-[-25px] w-[2px] bg-tertiary h-full rounded-full"
-                              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            />
-                          )}
                           <a
                             href={`#${id}`}
                             className={cn(
@@ -351,6 +391,15 @@ export default function ArticlePage() {
               DOCUMENT INDEX
             </h4>
             <ul ref={tocRef} className="space-y-4 relative">
+              <motion.div
+                className="absolute left-[-34.5px] w-[4px] bg-tertiary rounded-full z-10"
+                animate={{
+                  top: indicatorStyle.top,
+                  height: indicatorStyle.height,
+                  opacity: indicatorStyle.opacity
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 35 }}
+              />
               {toc.map(({ id, text, level }, i) => (
                 <li 
                   key={i} 
@@ -361,13 +410,6 @@ export default function ArticlePage() {
                   )} 
                   style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
                 >
-                  {activeId === id && (
-                    <motion.div
-                      layoutId="toc-slider"
-                      className="absolute left-[-33.5px] w-[3px] bg-tertiary h-full rounded-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
                   {level > 1 && <span className={cn(
                     "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
                     activeId === id ? "bg-tertiary" : "bg-current"
