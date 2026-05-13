@@ -23,26 +23,7 @@ export default function ArticlePage() {
   const [activeId, setActiveId] = useState<string>('');
 
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { 
-        rootMargin: '-100px 0% -80% 0%',
-        threshold: 0
-      }
-    );
 
-    const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
-    headingElements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [post?.content, loading]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -116,14 +97,16 @@ export default function ArticlePage() {
         });
       },
       { 
-        rootMargin: '-80px 0% -70% 0%',
+        rootMargin: '-100px 0% -70% 0%',
         threshold: [0, 0.1, 0.5, 1.0]
       }
     );
 
     // Use a small delay to ensure content is fully rendered
     const timer = setTimeout(() => {
-      const headingElements = document.querySelectorAll('.markdown-content h1[id], .markdown-content h2[id], .markdown-content h3[id], .markdown-content h4[id]');
+      const headingElements = document.querySelectorAll(
+        '.markdown-content h1[id], .markdown-content h2[id], .markdown-content h3[id], .markdown-content h4[id], .markdown-content h5[id], .markdown-content h6[id]'
+      );
       headingElements.forEach((el) => observer.observe(el));
     }, 500);
 
