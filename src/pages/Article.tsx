@@ -420,57 +420,73 @@ export default function ArticlePage() {
   );
 }
 
-function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgress, isSidebar, post }: { 
+function TableOfContents({ toc, activeId, setActiveId, isZenMode, isSidebar, post }: { 
   toc: any[], 
   activeId: string, 
   setActiveId: (id: string) => void, 
   isZenMode: boolean, 
-  scrollYProgress: any,
+  scrollYProgress: any, // kept for prop compatibility but will use internal scroll
   isSidebar?: boolean,
   post?: BlogPost | null
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartY = useRef(0);
-  const dragStartScrollPos = useRef(0);
+  const [showSlider, setShowSlider] = useState(false);
   
-  // y is driven purely by scroll progress
+  // Internal scroll progress for the TOC container
+  const { scrollYProgress: tocScrollProgress } = useScroll({
+    container: scrollRef
+  });
+
   const y = useMotionValue(0);
   const smoothY = useSpring(y, { stiffness: 300, damping: 30 });
 
+  // Update y based on TOC internal scroll
   useEffect(() => {
     const updateY = () => {
-      if (containerRef.current) {
-        y.set(scrollYProgress.get() * containerRef.current.offsetHeight);
+      if (scrollRef.current && containerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const progress = scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) : 0;
+        y.set(progress * containerRef.current.offsetHeight);
+        setShowSlider(scrollHeight > clientHeight);
       }
     };
 
-    updateY();
-    const unsubscribe = scrollYProgress.on("change", updateY);
-    window.addEventListener('resize', updateY);
-    
-    return () => {
-      unsubscribe();
-      window.removeEventListener('resize', updateY);
-    };
-  }, [scrollYProgress, toc]);
+    const container = scrollRef.current;
+    if (container) {
+      updateY();
+      container.addEventListener('scroll', updateY);
+      window.addEventListener('resize', updateY);
+      
+      const observer = new ResizeObserver(updateY);
+      observer.observe(container);
+      
+      return () => {
+        container.removeEventListener('scroll', updateY);
+        window.removeEventListener('resize', updateY);
+        observer.disconnect();
+      };
+    }
+  }, [toc]);
 
   const onSliderPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    dragStartY.current = e.clientY;
-    dragStartScrollPos.current = window.scrollY;
+    
+    const startY = e.clientY;
+    const startScrollTop = scrollRef.current?.scrollTop || 0;
 
     const onPointerMove = (moveEvent: PointerEvent) => {
-      if (!containerRef.current) return;
-      const deltaY = moveEvent.clientY - dragStartY.current;
+      if (!scrollRef.current || !containerRef.current) return;
+      const deltaY = moveEvent.clientY - startY;
+      const { scrollHeight, clientHeight } = scrollRef.current;
       const trackHeight = containerRef.current.offsetHeight;
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       
-      // Map the drag delta to the document scroll delta
-      const scrollDelta = (deltaY / trackHeight) * scrollHeight;
-      window.scrollTo(0, dragStartScrollPos.current + scrollDelta);
+      // Map the drag delta to the TOC internal scroll delta
+      const scrollDelta = (deltaY / trackHeight) * (scrollHeight - clientHeight);
+      scrollRef.current.scrollTop = startScrollTop + scrollDelta;
     };
 
     const onPointerUp = () => {
@@ -484,19 +500,29 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
+    if (!scrollRef.current || !containerRef.current) return;
     if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const relativeY = e.clientY - rect.top;
     const percentage = Math.max(0, Math.min(1, relativeY / rect.height));
     
-    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({
-      top: percentage * scrollHeight,
+    const { scrollHeight, clientHeight } = scrollRef.current;
+    scrollRef.current.scrollTo({
+      top: percentage * (scrollHeight - clientHeight),
       behavior: 'smooth'
     });
   };
+
+  // Scroll the TOC to keep the active item in view
+  useEffect(() => {
+    if (activeId && scrollRef.current) {
+      const activeEl = scrollRef.current.querySelector(`[data-id="${activeId}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [activeId]);
 
   return (
     <aside className={cn(
@@ -507,7 +533,8 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
         ref={containerRef} 
         onClick={handleTrackClick}
         className={cn(
-          "border-l border-outline-variant relative py-2 cursor-pointer group/track",
+          "border-l border-outline-variant relative py-2 group/track",
+          showSlider ? "cursor-pointer" : "cursor-default",
           isZenMode ? "pl-6" : "pl-8"
         )}
       >
@@ -519,62 +546,69 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
           {isSidebar ? "DOCUMENT INDEX" : "On this page"}
         </h4>
         
-        <ul className="space-y-4 relative">
-          {/* THE SLIDER (Mini-map scrollbar style) */}
-          <motion.div
-            onPointerDown={onSliderPointerDown}
-            className={cn(
-              "absolute bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing transition-all",
-              isZenMode ? "left-[-25.5px] w-[3px]" : "left-[-34px] w-[4px]",
-              isDragging ? "w-[6px]" : "group-hover/track:w-[6px]"
-            )}
-            style={{
-              y: smoothY,
-              height: 32,
-              top: 0,
-              transform: 'translateY(-50%)'
-            }}
-          />
-
-
-          {toc.map(({ id, text, level }, i) => (
-            <li 
-              key={i} 
-              data-id={id}
-              className={cn(
-                "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2 relative",
-                activeId === id || (!activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
-              )} 
-              style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
-            >
-              {level > 1 && !isZenMode && <span className={cn(
-                "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
-                activeId === id ? "bg-tertiary" : "bg-current"
-              )} />}
-              <a 
-                href={`#${id}`} 
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                  setActiveId(id);
-                }}
+        <div 
+          ref={scrollRef}
+          className="max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-hide relative pr-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <ul className="space-y-4 relative">
+            {/* THE SLIDER (Internal TOC scrollbar) */}
+            {showSlider && (
+              <motion.div
+                onPointerDown={onSliderPointerDown}
                 className={cn(
-                  "tracking-tight uppercase",
-                  isSidebar && "hover:underline"
+                  "absolute bg-tertiary rounded-full z-10 cursor-grab active:cursor-grabbing transition-all",
+                  isZenMode ? "left-[-25.5px] w-[3px]" : "left-[-34px] w-[4px]",
+                  isDragging ? "w-[6px]" : "group-hover/track:w-[6px]"
                 )}
+                style={{
+                  y: smoothY,
+                  height: 32,
+                  top: 0,
+                  transform: 'translateY(-50%)'
+                }}
+              />
+            )}
+
+            {toc.map(({ id, text, level }, i) => (
+              <li 
+                key={i} 
+                data-id={id}
+                className={cn(
+                  "text-[11px] font-mono leading-tight transition-colors flex items-start gap-2 relative",
+                  activeId === id || (!activeId && i === 0) ? "text-tertiary font-bold" : "text-secondary opacity-60"
+                )} 
+                style={{ marginLeft: level > 1 ? `${(level - 1) * 1}rem` : '0' }}
               >
-                {text}
-              </a>
-            </li>
-          ))}
-          {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
-        </ul>
+                {level > 1 && !isZenMode && <span className={cn(
+                  "mt-1.5 w-1 h-1 rounded-full flex-shrink-0",
+                  activeId === id ? "bg-tertiary" : "bg-current"
+                )} />}
+                <a 
+                  href={`#${id}`} 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                    setActiveId(id);
+                  }}
+                  className={cn(
+                    "tracking-tight uppercase",
+                    isSidebar && "hover:underline"
+                  )}
+                >
+                  {text}
+                </a>
+              </li>
+            ))}
+            {toc.length === 0 && <li className="text-[11px] font-mono text-secondary italic">No structured markers found.</li>}
+          </ul>
+        </div>
 
         {isSidebar && post && (
-          <>
+          <div className="mt-8">
             {post.tags && post.tags.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-outline-variant">
-                <h4 className="text-label-caps text-tertiary mb-6">TAXONOMY</h4>
+              <div className="mt-8 pt-6 border-t border-outline-variant">
+                <h4 className="text-label-caps text-tertiary mb-4">TAXONOMY</h4>
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map(tag => (
                     <span key={tag} className="text-[10px] font-mono bg-surface-container px-2 py-1 rounded text-secondary italic">#{tag}</span>
@@ -584,7 +618,7 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
             )}
 
             {post.canonicalUrl && (
-              <div className="mt-12 pt-8 border-t border-outline-variant">
+              <div className="mt-8 pt-6 border-t border-outline-variant">
                 <a
                   href={post.canonicalUrl}
                   target="_blank"
@@ -595,7 +629,7 @@ function TableOfContents({ toc, activeId, setActiveId, isZenMode, scrollYProgres
                 </a>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </aside>
